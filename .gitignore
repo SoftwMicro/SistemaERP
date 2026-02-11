@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+*.egg
+*.log
+
+# Virtualenv
+venv/
+env/
+ENV/
+*.env
+
+# Django
+*.sqlite3
+db.sqlite3
+media/
+staticfiles/
+
+# VS Code
+.vscode/
+
+# Docker
+*.pid
+*.seed
+*.bak
+*.swp
+*.swo
+*.tmp
+*.log
+docker-compose.override.yml
+
+# Redis dump
+dump.rdb
+
+# MySQL dumps
+*.sql
+
+# Pytest cache
+.pytest_cache/
+.coverage
+htmlcov/
