@@ -1,6 +1,7 @@
 from django.urls import path
-from .views import OrderMockView
+from orders.infrastructure.views import CustomerListView, CustomerDetailView
 
 urlpatterns = [
-    path('', OrderMockView.as_view(), name='orders-mock'),
+    path('v1/customers', CustomerListView.as_view(), name='customers-list'),
+    path('v1/customers/<int:id>', CustomerDetailView.as_view(), name='customers-detail'),
 ]
