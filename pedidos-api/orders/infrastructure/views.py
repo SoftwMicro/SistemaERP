@@ -1,10 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from orders.application.client_service import ClienteService
-from orders.infrastructure.repository import ClienteRepositoryMemoria
 
-cliente_service = ClienteService(repository=ClienteRepositoryMemoria())
+from orders.infrastructure.singletons import cliente_service
 
 
 

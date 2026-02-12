@@ -1,10 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from orders.application.product_service import ProductService
-from orders.infrastructure.repository_product import ProductRepositoryMemoria
 
-product_service = ProductService(repository=ProductRepositoryMemoria())
+from orders.infrastructure.singletons import product_service
 
 class ProductListView(APIView):
     def get(self, request):
