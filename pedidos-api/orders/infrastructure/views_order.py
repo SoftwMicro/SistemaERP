@@ -3,7 +3,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from orders.infrastructure.repository_order import OrderRepositoryMemoria
 from orders.application.order_service import OrderService
+
 from orders.application.client_service import cliente_service
+from orders.application.product_service import ProductService
+from orders.infrastructure.repository_product import ProductRepositoryMemoria
 
 # Serializers simples para resposta JSON
 class OrderItemSerializer:
@@ -46,7 +49,9 @@ class OrderSerializer:
 
 # Instâncias globais (mock)
 order_repository = OrderRepositoryMemoria()
-order_service = OrderService(order_repository, cliente_service)
+product_repository = ProductRepositoryMemoria()
+product_service = ProductService(repository=product_repository)
+order_service = OrderService(order_repository, cliente_service, product_service)
 
 class OrderListCreateView(APIView):
     def get(self, request):
