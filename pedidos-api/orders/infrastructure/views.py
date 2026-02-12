@@ -6,6 +6,34 @@ from orders.infrastructure.repository import ClienteRepositoryMemoria
 
 cliente_service = ClienteService(repository=ClienteRepositoryMemoria())
 
+
+
+class ApiRootView(APIView):
+    """
+    GET - /api/v1/ -> Lista todos os endpoints disponíveis
+    """
+    def get(self, request):
+        return Response({
+            "customers": {
+                "list": "/api/v1/customers",
+                "create": "/api/v1/customers",
+                "detail": "/api/v1/customers/<id>"
+            },
+            "products": {
+                "list": "/api/v1/products",
+                "create": "/api/v1/products",
+                "update_stock": "/api/v1/products/<sku>/stock"
+            },
+            "orders": {
+                "list": "/api/v1/orders",
+                "create": "/api/v1/orders",
+                "detail": "/api/v1/orders/<id>",
+                "update_status": "/api/v1/orders/<id>/status",
+                "cancel": "/api/v1/orders/<id>"
+            }
+        })
+
+
 class CustomerListView(APIView):
     def get(self, request):
         clientes = cliente_service.listar_clientes()
