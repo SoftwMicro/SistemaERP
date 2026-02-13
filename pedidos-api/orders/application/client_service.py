@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from orders.infrastructure.repository_client import ClienteRepositoryMemoria
+from orders.infrastructure.repository_client import ClienteRepository
 
 class ClienteService:
     def __init__(self, repository):
@@ -16,5 +16,5 @@ class ClienteService:
     def buscar_cliente(self, cliente_id):
         return self.repository.buscar_por_id(cliente_id)
 
-# Instancia o service com repositório em memória
-cliente_service = ClienteService(repository=ClienteRepositoryMemoria())
+# Instancia o service com repositório padrão
+cliente_service = ClienteService(repository=ClienteRepository())

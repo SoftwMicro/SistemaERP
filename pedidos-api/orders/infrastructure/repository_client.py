@@ -1,21 +1,15 @@
-from orders.domain.client import Cliente
+from orders.models import Cliente
 
-class ClienteRepositoryMemoria:
-    _clientes = []
-    _id_counter = 1
-
+class ClienteRepository:
     def criar(self, dados):
-        cliente = Cliente(**dados)
-        cliente.id = self._id_counter
-        self._id_counter += 1
-        self._clientes.append(cliente)
+        cliente = Cliente.objects.create(**dados)
         return cliente
 
     def listar(self):
-        return self._clientes
+        return list(Cliente.objects.all())
 
     def buscar_por_id(self, cliente_id):
-        for cliente in self._clientes:
-            if cliente.id == cliente_id:
-                return cliente
-        return None
+        try:
+            return Cliente.objects.get(id=cliente_id)
+        except Cliente.DoesNotExist:
+            return None

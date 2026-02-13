@@ -1,11 +1,11 @@
-from orders.infrastructure.repository_client import ClienteRepositoryMemoria
+from orders.infrastructure.repository_client import ClienteRepository
 from orders.infrastructure.repository_product import ProductRepositoryMemoria
 from orders.infrastructure.repository_order import OrderRepositoryMemoria
 from orders.application.client_service import ClienteService
 from orders.application.product_service import ProductService
 from orders.application.order_service import OrderService
 
-cliente_repository = ClienteRepositoryMemoria()
+cliente_repository = ClienteRepository()
 product_repository = ProductRepositoryMemoria()
 order_repository = OrderRepositoryMemoria()
 
