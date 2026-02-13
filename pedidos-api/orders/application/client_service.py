@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from orders.infrastructure.repository import ClienteRepositoryMemoria
+from orders.infrastructure.repository_client import ClienteRepositoryMemoria
 
 class ClienteService:
     def __init__(self, repository):

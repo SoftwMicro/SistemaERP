@@ -1,4 +1,4 @@
-from orders.infrastructure.repository import ClienteRepositoryMemoria
+from orders.infrastructure.repository_client import ClienteRepositoryMemoria
 from orders.infrastructure.repository_product import ProductRepositoryMemoria
 from orders.infrastructure.repository_order import OrderRepositoryMemoria
 from orders.application.client_service import ClienteService

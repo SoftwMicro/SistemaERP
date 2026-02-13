@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from orders.infrastructure.singletons import order_service
-from orders.infrastructure.repository import ClienteRepositoryMemoria
+from orders.infrastructure.repository_client import ClienteRepositoryMemoria
 from orders.infrastructure.repository_product import ProductRepositoryMemoria
 from orders.infrastructure.repository_order import OrderRepositoryMemoria
 from orders.application.client_service import ClienteService
