@@ -1,4 +1,24 @@
 import pytest
+from orders.domain.client import Cliente
+from orders.infrastructure.singletons import cliente_service
+
+# Fixture para garantir cliente no repositório em memória
+@pytest.fixture
+def cliente_memoria():
+    cliente_data = {
+        'nome': 'Cliente Teste',
+        'cpf_cnpj': '12345678900',
+        'email': 'cliente@teste.com',
+        'telefone': '11999999999',
+        'endereco': 'Rua Teste, 123'
+    }
+    cliente_obj = Cliente(**cliente_data)
+    # Garante id único
+    cliente_obj.id = 1
+    cliente_service.repository._clientes.clear()
+    cliente_service.repository._clientes.append(cliente_obj)
+    return cliente_obj
+import pytest
 from rest_framework.test import APIClient
 from django.urls import reverse
 
@@ -33,15 +53,16 @@ def test_criar_produto_api():
 @pytest.mark.django_db
 def test_criar_pedido_api():
     client = APIClient()
-    # Criar cliente
-    cliente = client.post('/api/v1/customers', {
+    # Criar cliente via API
+    cliente_data = {
         'nome': 'Cliente Teste',
         'cpf_cnpj': '12345678900',
         'email': 'cliente@teste.com',
         'telefone': '11999999999',
         'endereco': 'Rua Teste, 123'
-    }, format='json').data
-    # Criar produto
+    }
+    cliente = client.post('/api/v1/customers', cliente_data, format='json').data
+       # Criar produto
     produto = client.post('/api/v1/products', {
         'sku': 'SKU1',
         'name': 'Produto Teste',
@@ -50,25 +71,34 @@ def test_criar_pedido_api():
         'stock_quantity': 5
     }, format='json').data
     # Criar pedido
+     # Garante cliente no repositório em memória
+    from orders.domain.client import Cliente
+    from orders.infrastructure.singletons import cliente_service
+    cliente_obj = Cliente(**cliente_data)
+    cliente_obj.id = cliente['id']
+    cliente_service.repository._clientes.append(cliente_obj)
+
     resp = client.post('/api/v1/orders', {
-        'cliente_id': 1,
+        'cliente_id': cliente['id'],
         'itens': [{'produto': 'SKU1', 'quantidade': 2}],
         'observacoes': 'Teste'
     }, format='json')
+    print('Resposta da API ao criar pedido:', resp.data)
     assert resp.status_code == 201
     assert resp.data['status'] == 'PENDENTE'
     assert resp.data['valor_total'] == 20.0
 
 @pytest.mark.django_db
-def test_criar_pedido_estoque_insuficiente_api():
+def test_criar_pedido_estoque_insuficiente_api(cliente_memoria):
     client = APIClient()
-    client.post('/api/v1/customers', {
+    # Cliente já está no repositório em memória
+    cliente = client.post('/api/v1/customers', {
         'nome': 'Cliente Teste',
         'cpf_cnpj': '12345678900',
         'email': 'cliente@teste.com',
         'telefone': '11999999999',
         'endereco': 'Rua Teste, 123'
-    }, format='json')
+    }, format='json').data
     client.post('/api/v1/products', {
         'sku': 'SKU1',
         'name': 'Produto Teste',
@@ -77,7 +107,7 @@ def test_criar_pedido_estoque_insuficiente_api():
         'stock_quantity': 1
     }, format='json')
     resp = client.post('/api/v1/orders', {
-        'cliente_id': 1,
+        'cliente_id': cliente['id'],
         'itens': [{'produto': 'SKU1', 'quantidade': 2}],
         'observacoes': 'Teste'
     }, format='json')
@@ -87,13 +117,13 @@ def test_criar_pedido_estoque_insuficiente_api():
 @pytest.mark.django_db
 def test_cancelar_pedido_api():
     client = APIClient()
-    client.post('/api/v1/customers', {
+    cliente = client.post('/api/v1/customers', {
         'nome': 'Cliente Teste',
         'cpf_cnpj': '12345678900',
         'email': 'cliente@teste.com',
         'telefone': '11999999999',
         'endereco': 'Rua Teste, 123'
-    }, format='json')
+    }, format='json').data
     client.post('/api/v1/products', {
         'sku': 'SKU1',
         'name': 'Produto Teste',
@@ -102,7 +132,7 @@ def test_cancelar_pedido_api():
         'stock_quantity': 5
     }, format='json')
     pedido = client.post('/api/v1/orders', {
-        'cliente_id': 1,
+        'cliente_id': cliente['id'],
         'itens': [{'produto': 'SKU1', 'quantidade': 2}],
         'observacoes': 'Teste'
     }, format='json').data
@@ -113,13 +143,13 @@ def test_cancelar_pedido_api():
 @pytest.mark.django_db
 def test_transicao_invalida_status_api():
     client = APIClient()
-    client.post('/api/v1/customers', {
+    cliente = client.post('/api/v1/customers', {
         'nome': 'Cliente Teste',
         'cpf_cnpj': '12345678900',
         'email': 'cliente@teste.com',
         'telefone': '11999999999',
         'endereco': 'Rua Teste, 123'
-    }, format='json')
+    }, format='json').data
     client.post('/api/v1/products', {
         'sku': 'SKU1',
         'name': 'Produto Teste',
@@ -128,7 +158,7 @@ def test_transicao_invalida_status_api():
         'stock_quantity': 5
     }, format='json')
     pedido = client.post('/api/v1/orders', {
-        'cliente_id': 1,
+        'cliente_id': cliente['id'],
         'itens': [{'produto': 'SKU1', 'quantidade': 2}],
         'observacoes': 'Teste'
     }, format='json').data

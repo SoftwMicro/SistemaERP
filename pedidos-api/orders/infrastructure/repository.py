@@ -1,9 +1,8 @@
 from orders.domain.client import Cliente
 
 class ClienteRepositoryMemoria:
-    def __init__(self):
-        self._clientes = []
-        self._id_counter = 1
+    _clientes = []
+    _id_counter = 1
 
     def criar(self, dados):
         cliente = Cliente(**dados)
