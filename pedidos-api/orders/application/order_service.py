@@ -2,6 +2,7 @@
 from orders.domain.order import Order
 from orders.domain.order_item import OrderItem
 from orders.domain.order_status_history import OrderStatusHistory
+from orders.infrastructure.redis_services import RedisLock, RedisIdempotency
 
 class OrderService:
     def __init__(self, repository, cliente_service, product_service):
@@ -10,11 +11,15 @@ class OrderService:
         self.product_service = product_service
 
     def criar_pedido(self, dados):
+        redis_lock = RedisLock()
+        redis_idemp = RedisIdempotency()
         idempotency_key = dados.get('idempotency_key')
         if idempotency_key:
-            pedido_existente = getattr(self.repository, 'buscar_por_idempotency_key', lambda k: None)(idempotency_key)
-            if pedido_existente:
-                return pedido_existente
+            pedido_id = redis_idemp.get_pedido_id(idempotency_key)
+            if pedido_id:
+                pedido = self.repository.buscar_por_id(pedido_id)
+                if pedido:
+                    return pedido
         cliente = self.cliente_service.buscar_cliente(dados['cliente_id'])
         if not cliente:
             raise ValueError('Cliente não encontrado')
@@ -25,23 +30,44 @@ class OrderService:
         if not dados['itens'] or any(item.get('quantidade', 0) <= 0 for item in dados['itens']):
             raise ValueError('A quantidade de itens deve ser maior que zero')
         # Verificar estoque de todos os produtos (tudo ou nada)
-        for item in dados['itens']:
-            produto = self.product_service.repository.listar()
-            produto = next((p for p in produto if p.sku == item['produto']), None)
-            if not produto:
-                raise ValueError(f"Produto {item['produto']} não encontrado")
-            if hasattr(produto, 'is_active') and not produto.is_active:
-                raise ValueError(f"Produto {item['produto']} inativo")
-            if produto.stock_quantity < item['quantidade']:
-                raise ValueError(f"Estoque insuficiente para o produto {produto.sku}")
-            itens.append(OrderItem(produto=produto.sku, quantidade=item['quantidade'], preco_unitario=produto.price))
-
-        # Reservar estoque (atômico)
-        for item in dados['itens']:
-            self.product_service.repository.atualizar_estoque(item['produto'],
-                self.product_service.repository.listar()
-                and next((p.stock_quantity - item['quantidade'] for p in self.product_service.repository.listar() if p.sku == item['produto']), 0)
-            )
+        locked_skus = []
+        try:
+            for item in dados['itens']:
+                produto = self.product_service.repository.listar()
+                produto = next((p for p in produto if p.sku == item['produto']), None)
+                if not produto:
+                    raise ValueError(f"Produto {item['produto']} não encontrado")
+                if hasattr(produto, 'is_active') and not produto.is_active:
+                    raise ValueError(f"Produto {item['produto']} inativo")
+                # Lock por SKU
+                if not redis_lock.acquire_lock(produto.sku, idempotency_key or 'pedido_temp'):
+                    raise ValueError(f"Concorrência: Produto {produto.sku} está sendo reservado")
+                locked_skus.append(produto.sku)
+                if produto.stock_quantity < item['quantidade']:
+                    raise ValueError(f"Estoque insuficiente para o produto {produto.sku}")
+                itens.append(OrderItem(produto=produto.sku, quantidade=item['quantidade'], preco_unitario=produto.price))
+            # Reservar estoque (atômico)
+            for item in dados['itens']:
+                self.product_service.repository.atualizar_estoque(item['produto'],
+                    self.product_service.repository.listar()
+                    and next((p.stock_quantity - item['quantidade'] for p in self.product_service.repository.listar() if p.sku == item['produto']), 0)
+                )
+        except Exception as e:
+            # Libera locks em caso de erro
+            for sku in locked_skus:
+                redis_lock.release_lock(sku)
+            raise
+        # Cria pedido
+        pedido = Order(cliente=cliente, itens=itens, observacoes=dados.get('observacoes'))
+        pedido.idempotency_key = idempotency_key
+        self.repository.salvar(pedido)
+        # Salva idempotency no Redis
+        if idempotency_key:
+            redis_idemp.save_key(idempotency_key, pedido.numero)
+        # Libera locks
+        for sku in locked_skus:
+            redis_lock.release_lock(sku)
+        return pedido
 
         pedido = Order(cliente=cliente, itens=itens, observacoes=dados.get('observacoes'))
         self.repository.salvar(pedido)
