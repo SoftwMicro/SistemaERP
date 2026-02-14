@@ -1,8 +1,17 @@
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-
+from rest_framework import serializers
 from orders.infrastructure.singletons import cliente_service
+from orders.models import Cliente
+
+
+# Serializer para Cliente
+class ClienteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cliente
+        fields = ['id', 'nome', 'cpf_cnpj', 'email', 'telefone', 'endereco', 'ativo']
 
 
 
@@ -33,19 +42,23 @@ class ApiRootView(APIView):
 
 
 class CustomerListView(APIView):
+
     def get(self, request):
         clientes = cliente_service.listar_clientes()
-        data = [vars(c) for c in clientes]
-        return Response(data)
+        serializer = ClienteSerializer(clientes, many=True)
+        return Response(serializer.data)
 
     def post(self, request):
-        cliente = cliente_service.criar_cliente(request.data)
-        return Response(vars(cliente), status=status.HTTP_201_CREATED)
+        serializer = ClienteSerializer(data=request.data)
+        if serializer.is_valid():
+            cliente = cliente_service.criar_cliente(serializer.validated_data)
+            return Response(ClienteSerializer(cliente).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CustomerDetailView(APIView):
     def get(self, request, id):
         cliente = cliente_service.buscar_cliente(id)
         if cliente:
-            return Response(vars(cliente))
+            return Response(ClienteSerializer(cliente).data)
         return Response({"error": "Cliente não encontrado"}, status=status.HTTP_404_NOT_FOUND)

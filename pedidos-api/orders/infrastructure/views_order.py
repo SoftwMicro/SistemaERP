@@ -3,12 +3,6 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from orders.infrastructure.singletons import order_service
-from orders.infrastructure.repository_client import ClienteRepository
-from orders.infrastructure.repository_product import ProductRepositoryMemoria
-from orders.infrastructure.repository_order import OrderRepositoryMemoria
-from orders.application.client_service import ClienteService
-from orders.application.product_service import ProductService
-from orders.application.order_service import OrderService
 #  Serializers simples para resposta JSON
 class OrderItemSerializer:
     def __init__(self, obj):
@@ -48,13 +42,7 @@ class OrderSerializer:
             'historico_status': [OrderStatusHistorySerializer(h).data() for h in self.obj.historico_status]
         }
 
-# Instâncias globais (mock)
-cliente_repository = ClienteRepository()
-cliente_service = ClienteService(repository=cliente_repository)
-order_repository = OrderRepositoryMemoria()
-product_repository = ProductRepositoryMemoria()
-product_service = ProductService(repository=product_repository)
-order_service = OrderService(order_repository, cliente_service, product_service)
+
 
 class OrderListCreateView(APIView):
     def get(self, request):

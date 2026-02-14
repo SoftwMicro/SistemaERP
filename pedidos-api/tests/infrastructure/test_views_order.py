@@ -22,7 +22,7 @@ import pytest
 from rest_framework.test import APIClient
 from django.urls import reverse
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_criar_cliente_api():
     client = APIClient()
     resp = client.post('/api/v1/customers', {

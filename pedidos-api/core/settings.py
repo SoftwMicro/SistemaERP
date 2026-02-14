@@ -83,6 +83,9 @@ DATABASES = {
         'PASSWORD': '010101',
         'HOST': 'localhost',
         'PORT': '3306',
+        'TEST': {
+            'NAME': 'pedidos',  # Usa o mesmo banco para testes
+        },
     }
 }
 

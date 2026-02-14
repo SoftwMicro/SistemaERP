@@ -1,27 +1,54 @@
+from orders.models import Produto as ProdutoModel
 from orders.domain.product import Product
 from orders.application.product_service import ProductRepository
 
-class ProductRepositoryMemoria(ProductRepository):
-    _produtos = {}
-
+class ProductRepository(ProductRepository):
     def criar(self, dados):
-        produto = Product(
+        produto_model = ProdutoModel.objects.create(
             sku=dados.get("sku"),
-            name=dados.get("name"),
-            description=dados.get("description"),
-            price=dados.get("price"),
-            stock_quantity=dados.get("stock_quantity", 0),
-            is_active=dados.get("is_active", True)
+            nome=dados.get("name"),
+            descricao=dados.get("description"),
+            preco=dados.get("price"),
+            quantidade_estoque=dados.get("stock_quantity", 0),
+            ativo=dados.get("is_active", True)
         )
-        self._produtos[produto.sku] = produto
+        produto = Product(
+            sku=produto_model.sku,
+            name=produto_model.nome,
+            description=produto_model.descricao,
+            price=produto_model.preco,
+            stock_quantity=produto_model.quantidade_estoque,
+            is_active=produto_model.ativo
+        )
         return produto
 
     def listar(self):
-        return list(self._produtos.values())
+        produtos = []
+        for produto_model in ProdutoModel.objects.all():
+            produto = Product(
+                sku=produto_model.sku,
+                name=produto_model.nome,
+                description=produto_model.descricao,
+                price=produto_model.preco,
+                stock_quantity=produto_model.quantidade_estoque,
+                is_active=produto_model.ativo
+            )
+            produtos.append(produto)
+        return produtos
 
     def atualizar_estoque(self, sku, quantidade):
-        produto = self._produtos.get(sku)
-        if produto:
-            produto.stock_quantity = quantidade
+        try:
+            produto_model = ProdutoModel.objects.get(sku=sku)
+            produto_model.quantidade_estoque = quantidade
+            produto_model.save()
+            produto = Product(
+                sku=produto_model.sku,
+                name=produto_model.nome,
+                description=produto_model.descricao,
+                price=produto_model.preco,
+                stock_quantity=produto_model.quantidade_estoque,
+                is_active=produto_model.ativo
+            )
             return produto
-        return None
+        except ProdutoModel.DoesNotExist:
+            return None

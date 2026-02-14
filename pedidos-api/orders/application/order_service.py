@@ -16,7 +16,8 @@ class OrderService:
         itens = []
         # Verificar estoque de todos os produtos (tudo ou nada)
         for item in dados['itens']:
-            produto = self.product_service.repository._produtos.get(item['produto'])
+            produto = self.product_service.repository.listar()
+            produto = next((p for p in produto if p.sku == item['produto']), None)
             if not produto:
                 raise ValueError(f"Produto {item['produto']} não encontrado")
             if produto.stock_quantity < item['quantidade']:
@@ -25,8 +26,10 @@ class OrderService:
 
         # Reservar estoque (atômico)
         for item in dados['itens']:
-            produto = self.product_service.repository._produtos[item['produto']]
-            produto.stock_quantity -= item['quantidade']
+            self.product_service.repository.atualizar_estoque(item['produto'],
+                self.product_service.repository.listar()
+                and next((p.stock_quantity - item['quantidade'] for p in self.product_service.repository.listar() if p.sku == item['produto']), 0)
+            )
 
         pedido = Order(cliente=cliente, itens=itens, observacoes=dados.get('observacoes'))
         self.repository.salvar(pedido)
@@ -65,7 +68,8 @@ class OrderService:
             raise ValueError('Só é possível cancelar pedidos PENDENTE ou CONFIRMADO')
         # Devolver estoque
         for item in pedido.itens:
-            produto = self.product_service.repository._produtos.get(item.produto)
+            produto = self.product_service.repository.listar()
+            produto = next((p for p in produto if p.sku == item.produto), None)
             if produto:
-                produto.stock_quantity += item.quantidade
+                self.product_service.repository.atualizar_estoque(produto.sku, produto.stock_quantity + item.quantidade)
         return self.alterar_status(pedido_id, 'CANCELADO', usuario, observacoes)
