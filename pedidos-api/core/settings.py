@@ -84,7 +84,7 @@ DATABASES = {
         'HOST': 'localhost',
         'PORT': '3306',
         'TEST': {
-            'NAME': 'pedidos',  # Usa o mesmo banco para testes
+            'NAME': 'pedidos_test',  # banco fixo para testes
         },
     }
 }
