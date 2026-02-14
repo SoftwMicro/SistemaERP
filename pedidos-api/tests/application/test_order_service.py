@@ -24,6 +24,13 @@ class DummyProductRepository:
     def __init__(self):
         self._produtos = {'SKU1': DummyProduct('SKU1', 10.0, 5)}
 
+    def listar(self):
+        return list(self._produtos.values())
+
+    def atualizar_estoque(self, sku, nova_quantidade):
+        if sku in self._produtos:
+            self._produtos[sku].stock_quantity = nova_quantidade
+
 class DummyProductService:
     def __init__(self):
         self.repository = DummyProductRepository()

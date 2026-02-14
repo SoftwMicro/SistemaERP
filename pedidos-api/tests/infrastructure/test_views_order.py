@@ -13,12 +13,8 @@ def cliente_memoria():
         'telefone': '11999999999',
         'endereco': 'Rua Teste, 123'
     }
-    cliente_obj = Cliente(**cliente_data)
-    # Garante id único
-    cliente_obj.id = 1
-    cliente_service.repository._clientes.clear()
-    cliente_service.repository._clientes.append(cliente_obj)
-    return cliente_obj
+    # ClienteRepository usa ORM, não é necessário manipular _clientes
+    return cliente_data
 import pytest
 from rest_framework.test import APIClient
 from django.urls import reverse
@@ -81,11 +77,7 @@ def test_criar_pedido_api():
         'price': round(random.uniform(5, 100), 2),
         'stock_quantity': random.randint(5, 20)
     }, format='json').data
-    from orders.domain.client import Cliente
-    from orders.infrastructure.singletons import cliente_service
-    cliente_obj = Cliente(**cliente_data)
-    cliente_obj.id = cliente['id']
-    cliente_service.repository._clientes.append(cliente_obj)
+    # Cliente já está persistido via API, não é necessário manipular repositório em memória
 
     quantidade = random.randint(1, 4)
     resp = client.post('/api/v1/orders', {
@@ -96,7 +88,7 @@ def test_criar_pedido_api():
     print('Resposta da API ao criar pedido:', resp.data)
     assert resp.status_code == 201
     assert resp.data['status'] == 'PENDENTE'
-    assert resp.data['valor_total'] == pytest.approx(produto['price'] * quantidade, 0.01)
+    assert float(resp.data['valor_total']) == pytest.approx(produto['price'] * quantidade, 0.01)
 
 @pytest.mark.django_db
 @pytest.mark.order(4)
