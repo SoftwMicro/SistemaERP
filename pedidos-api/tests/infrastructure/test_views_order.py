@@ -19,7 +19,7 @@ import pytest
 from rest_framework.test import APIClient
 from django.urls import reverse
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 @pytest.mark.order(1)
 def test_criar_cliente_api():
     import random, string

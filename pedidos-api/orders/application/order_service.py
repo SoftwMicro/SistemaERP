@@ -10,16 +10,28 @@ class OrderService:
         self.product_service = product_service
 
     def criar_pedido(self, dados):
+        idempotency_key = dados.get('idempotency_key')
+        if idempotency_key:
+            pedido_existente = getattr(self.repository, 'buscar_por_idempotency_key', lambda k: None)(idempotency_key)
+            if pedido_existente:
+                return pedido_existente
         cliente = self.cliente_service.buscar_cliente(dados['cliente_id'])
         if not cliente:
             raise ValueError('Cliente não encontrado')
+        if hasattr(cliente, 'ativo') and not cliente.ativo:
+            raise ValueError('Cliente inativo')
         itens = []
+        # Validar quantidade de itens
+        if not dados['itens'] or any(item.get('quantidade', 0) <= 0 for item in dados['itens']):
+            raise ValueError('A quantidade de itens deve ser maior que zero')
         # Verificar estoque de todos os produtos (tudo ou nada)
         for item in dados['itens']:
             produto = self.product_service.repository.listar()
             produto = next((p for p in produto if p.sku == item['produto']), None)
             if not produto:
                 raise ValueError(f"Produto {item['produto']} não encontrado")
+            if hasattr(produto, 'is_active') and not produto.is_active:
+                raise ValueError(f"Produto {item['produto']} inativo")
             if produto.stock_quantity < item['quantidade']:
                 raise ValueError(f"Estoque insuficiente para o produto {produto.sku}")
             itens.append(OrderItem(produto=produto.sku, quantidade=item['quantidade'], preco_unitario=produto.price))

@@ -48,6 +48,7 @@ class Order(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="PENDENTE", db_index=True)
     valor_total = models.DecimalField(max_digits=12, decimal_places=2)
     observacoes = models.TextField(blank=True, null=True)
+    idempotency_key = models.CharField(max_length=100, unique=True, null=True, blank=True, db_index=True)
 
     class Meta:
         indexes = [

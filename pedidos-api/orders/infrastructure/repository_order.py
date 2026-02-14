@@ -1,26 +1,29 @@
 from orders.models import Order as OrderModel, OrderItem as OrderItemModel, Produto as ProdutoModel
 from orders.domain.order import Order
 from orders.domain.order_item import OrderItem
+from django.db import transaction
 
 class OrderRepository:
     def salvar(self, pedido: Order):
-        # Cria o pedido no banco de dados
-        order_model = OrderModel.objects.create(
-            cliente=pedido.cliente,
-            valor_total=pedido.valor_total,
-            observacoes=pedido.observacoes or ""
-        )
-        for item in pedido.itens:
-            produto_model = ProdutoModel.objects.get(sku=item.produto)
-            OrderItemModel.objects.create(
-                pedido=order_model,
-                produto=produto_model,
-                quantidade=item.quantidade,
-                preco_unitario=item.preco_unitario,
-                subtotal=item.subtotal
+        # Cria o pedido no banco de dados de forma transacional
+        with transaction.atomic():
+            order_model = OrderModel.objects.create(
+                cliente=pedido.cliente,
+                valor_total=pedido.valor_total,
+                observacoes=pedido.observacoes or "",
+                idempotency_key=getattr(pedido, 'idempotency_key', None)
             )
-        pedido.numero = order_model.id
-        return pedido
+            for item in pedido.itens:
+                produto_model = ProdutoModel.objects.get(sku=item.produto)
+                OrderItemModel.objects.create(
+                    pedido=order_model,
+                    produto=produto_model,
+                    quantidade=item.quantidade,
+                    preco_unitario=item.preco_unitario,
+                    subtotal=item.subtotal
+                )
+            pedido.numero = order_model.id
+            return pedido
 
     def listar(self):
         pedidos = []
