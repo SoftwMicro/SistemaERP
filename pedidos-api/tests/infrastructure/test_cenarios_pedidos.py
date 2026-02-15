@@ -3,7 +3,7 @@ from rest_framework.test import APIClient
 import threading
 import time
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 class TestCenariosPedidos:
     def test_concorrencia_estoque(self):
         """
@@ -12,6 +12,9 @@ class TestCenariosPedidos:
         Apenas um deve ser aceito.
         """
         client = APIClient()
+        # Remove produto SKU_CONC se já existir para evitar duplicidade
+        from orders.models import Produto
+        Produto.objects.filter(sku='SKU_CONC').delete()
         # Cria produto com 10 unidades
         produto = client.post('/api/v1/products', {
             'sku': 'SKU_CONC',
@@ -21,18 +24,23 @@ class TestCenariosPedidos:
             'stock_quantity': 10
         }, format='json').data
         # Cria cliente
-        cliente = client.post('/api/v1/customers', {
+        cliente_resp = client.post('/api/v1/customers', {
             'nome': 'Cliente Concorrente',
             'cpf_cnpj': '11111111111',
             'email': 'concorrente@teste.com',
             'telefone': '11999999999',
             'endereco': 'Rua Concorrente, 1'
-        }, format='json').data
+        }, format='json')
+        cliente = cliente_resp.data
+        cliente_id = cliente['id']
+        # Aguarda para garantir visibilidade do cliente entre threads
+        time.sleep(0.2)
         # Função para tentar criar pedido
         results = []
         def criar_pedido(idempotency_key):
-            resp = client.post('/api/v1/orders', {
-                'cliente_id': cliente['id'],
+            thread_client = APIClient()
+            resp = thread_client.post('/api/v1/orders', {
+                'cliente_id': cliente_id,
                 'itens': [{'produto': 'SKU_CONC', 'quantidade': 8}],
                 'observacoes': 'Concorrência',
                 'idempotency_key': idempotency_key
