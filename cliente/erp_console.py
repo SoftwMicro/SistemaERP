@@ -14,6 +14,7 @@ def menu():
     print("4. Consultar Pedido por Número")
     print("5. Consultar Histórico de Status de Pedido")
     print("6. Sair")
+    print("7. Selecionar Pedido para Atualização de Status")
     return input("Escolha uma opção: ")
 
 def incluir_cliente():
@@ -73,7 +74,52 @@ def consultar_historico():
     resp = requests.get(f"{API_BASE}/orders/{numero}/history")
     print("Status:", resp.status_code)
     print("Dados:", resp.json())
+STATUS_CHOICES = [
+    'PENDENTE', 'CONFIRMADO', 'SEPARADO',
+    'ENVIADO', 'ENTREGUE', 'CANCELADO'
+]
 
+pedido_cache = None  # variável para armazenar o ID do pedido
+
+def selecionar_pedido():
+    global pedido_cache
+    pedido_cache = input("Informe o ID do pedido: ")
+    print(f"Pedido {pedido_cache} armazenado em cache.")
+
+
+
+def atualizar_status():
+    global pedido_cache
+    pedido_cache = input("Informe o número do pedido: ")
+    print(f"Pedido {pedido_cache} armazenado em cache.\n")
+
+    print("=== Atualizar Status do Pedido ===")
+    for i, status in enumerate(STATUS_CHOICES, start=1):
+        print(f"{i}. {status}")
+    
+    escolha = input("Escolha o novo status: ")
+    try:
+        novo_status = STATUS_CHOICES[int(escolha)-1]
+    except (ValueError, IndexError):
+        print("Opção inválida!")
+        return
+    
+    usuario = input("Usuário responsável (default: sistema): ") or "sistema"
+    observacoes = input("Observações: ")
+    
+    dados = {
+        "status": novo_status,
+        "usuario": usuario,
+        "observacoes": observacoes
+    }
+    
+    # Usando PATCH para atualização parcial
+    resp = requests.patch(f"{API_BASE}/orders/{pedido_cache}/status", json=dados)
+    print("Status:", resp.status_code)
+    try:
+        print("Resposta:", resp.json())
+    except Exception:
+        print("Resposta não é JSON:", resp.text)
 def main():
     while True:
         op = menu()
@@ -89,9 +135,11 @@ def main():
             consultar_historico()
         elif op == "6":
             print("Saindo...")
-            break
+        elif op == "7":
+             atualizar_status()
         else:
             print("Opção inválida!")
+            
 
 if __name__ == "__main__":
     main()
