@@ -31,8 +31,9 @@ class OrderService:
             raise ValueError('A quantidade de itens deve ser maior que zero')
         # Verificar estoque de todos os produtos (tudo ou nada)
         locked_skus = []
+        produtos_info = {}
         try:
-            # Lock e checagem/reserva de estoque devem ser atômicos por SKU
+            # Primeiro: Lock e checagem de estoque para todos os itens
             for item in dados['itens']:
                 produto = self.product_service.repository.listar()
                 produto = next((p for p in produto if p.sku == item['produto']), None)
@@ -44,13 +45,22 @@ class OrderService:
                 if not redis_lock.acquire_lock(produto.sku, idempotency_key or 'pedido_temp'):
                     raise ValueError(f"Concorrência: Produto {produto.sku} está sendo reservado")
                 locked_skus.append(produto.sku)
-                # Checagem e reserva de estoque dentro do lock
+                # Checagem de estoque
                 produto_atual = self.product_service.repository.listar()
                 produto_atual = next((p for p in produto_atual if p.sku == item['produto']), None)
                 if produto_atual.stock_quantity < item['quantidade']:
                     raise ValueError(f"Estoque insuficiente para o produto {produto.sku}")
-                self.product_service.repository.atualizar_estoque(item['produto'], produto_atual.stock_quantity - item['quantidade'])
-                itens.append(OrderItem(produto=produto.sku, quantidade=item['quantidade'], preco_unitario=produto.price))
+                # Guarda info para segunda etapa
+                produtos_info[produto.sku] = {
+                    'produto': produto,
+                    'quantidade': item['quantidade'],
+                    'preco': produto.price,
+                    'stock_quantity': produto_atual.stock_quantity
+                }
+            # Segundo: Só agora faz a reserva de estoque e monta os itens
+            for sku, info in produtos_info.items():
+                self.product_service.repository.atualizar_estoque(sku, info['stock_quantity'] - info['quantidade'])
+                itens.append(OrderItem(produto=sku, quantidade=info['quantidade'], preco_unitario=info['preco']))
         except Exception as e:
             # Libera locks em caso de erro
             for sku in locked_skus:

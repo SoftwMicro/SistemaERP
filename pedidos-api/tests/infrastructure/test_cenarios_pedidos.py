@@ -93,6 +93,9 @@ class TestCenariosPedidos:
         Pedido com 3 itens, um sem estoque. Nenhum estoque deve ser reservado.
         """
         client = APIClient()
+        # Remove produtos de teste se já existirem para evitar duplicidade
+        from orders.models import Produto
+        Produto.objects.filter(sku__in=['SKU_ATOM1', 'SKU_ATOM2', 'SKU_ATOM3']).delete()
         # Cria produtos
         p1 = client.post('/api/v1/products', {
             'sku': 'SKU_ATOM1', 'name': 'Produto 1', 'description': 'P1', 'price': 10.0, 'stock_quantity': 5
