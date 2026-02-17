@@ -20,11 +20,13 @@ class Order:
     def adicionar_status(self, novo_status, usuario, observacoes=None):
         if novo_status not in self.STATUS_CHOICES:
             raise ValueError('Status inválido')
+        # idempotency_key deve ser passado como atributo do pedido
         historico = OrderStatusHistory(
             data_hora=datetime.now(),
             status_anterior=self.status,
             novo_status=novo_status,
             usuario=usuario,
+            idempotency_key=getattr(self, 'idempotency_key', None),
             observacoes=observacoes
         )
         self.historico_status.append(historico)

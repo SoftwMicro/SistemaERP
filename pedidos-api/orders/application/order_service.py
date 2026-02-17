@@ -105,6 +105,20 @@ class OrderService:
         if novo_status not in transicoes_validas.get(status_atual, []):
             raise ValueError(f"Transição de status inválida: {status_atual} → {novo_status}")
         pedido.adicionar_status(novo_status, usuario, observacoes)
+        # Atualiza apenas o status do pedido existente
+        from orders.models import Order as OrderModel
+        OrderModel.objects.filter(id=pedido.numero).update(status=novo_status)
+        # Persiste histórico de status
+        from orders.models import OrderStatusHistory as OrderStatusHistoryModel
+        OrderStatusHistoryModel.objects.create(
+            pedido_id=pedido.numero,
+            data_hora=pedido.historico_status[-1].data_hora,
+            status_anterior=pedido.historico_status[-1].status_anterior,
+            novo_status=pedido.historico_status[-1].novo_status,
+            usuario=pedido.historico_status[-1].usuario,
+            idempotency_key=pedido.historico_status[-1].idempotency_key,
+            observacoes=pedido.historico_status[-1].observacoes
+        )
         return pedido
 
     def cancelar_pedido(self, pedido_id, usuario, observacoes=None):

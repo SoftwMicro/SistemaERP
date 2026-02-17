@@ -78,6 +78,7 @@ class OrderStatusHistory(models.Model):
     status_anterior = models.CharField(max_length=20)
     novo_status = models.CharField(max_length=20)
     usuario = models.CharField(max_length=100)
+    idempotency_key = models.CharField(max_length=100, unique=False, null=True, blank=True, db_index=True)
     observacoes = models.TextField(blank=True, null=True)
 
     def __str__(self):
