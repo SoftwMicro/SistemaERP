@@ -44,11 +44,38 @@ class ApiRootView(APIView):
 class CustomerListView(APIView):
 
     def get(self, request):
+        """
+        Lista todos os clientes cadastrados.
+        Exemplo de resposta:
+        [
+            {
+                "id": 1,
+                "nome": "João Silva",
+                "cpf_cnpj": "123.456.789-00",
+                "email": "joao@email.com",
+                "telefone": "(11) 99999-9999",
+                "endereco": "Rua Exemplo, 123",
+                "ativo": true
+            }
+        ]
+        """
         clientes = cliente_service.listar_clientes()
         serializer = ClienteSerializer(clientes, many=True)
         return Response(serializer.data)
 
     def post(self, request):
+        """
+        Cria um novo cliente.
+        Exemplo de entrada:
+        {
+            "nome": "Maria Souza",
+            "cpf_cnpj": "987.654.321-00",
+            "email": "maria@email.com",
+            "telefone": "(21) 88888-8888",
+            "endereco": "Av. Teste, 456",
+            "ativo": true
+        }
+        """
         serializer = ClienteSerializer(data=request.data)
         if serializer.is_valid():
             cliente = cliente_service.criar_cliente(serializer.validated_data)

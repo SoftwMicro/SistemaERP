@@ -46,11 +46,45 @@ class OrderSerializer:
 
 class OrderListCreateView(APIView):
     def get(self, request):
+        """
+        Lista todos os pedidos.
+        Exemplo de resposta:
+        [
+            {
+                "numero": 1,
+                "data_criacao": "2024-01-01T10:00:00",
+                "cliente": "João Silva",
+                "status": "PENDENTE",
+                "valor_total": 199.99,
+                "observacoes": "Pedido urgente",
+                "itens": [
+                    {
+                        "produto": "Produto Exemplo",
+                        "quantidade": 2,
+                        "preco_unitario": 99.99,
+                        "subtotal": 199.98
+                    }
+                ],
+                "historico_status": []
+            }
+        ]
+        """
         pedidos = order_service.listar_pedidos()
         data = [OrderSerializer(p).data() for p in pedidos]
         return Response(data)
 
     def post(self, request):
+        """
+        Cria um novo pedido.
+        Exemplo de entrada:
+        {
+            "cliente": 1,
+            "itens": [
+                {"produto": 1, "quantidade": 2}
+            ],
+            "observacoes": "Pedido urgente"
+        }
+        """
         try:
             pedido = order_service.criar_pedido(request.data)
             return Response(OrderSerializer(pedido).data(), status=status.HTTP_201_CREATED)
