@@ -1,0 +1,8 @@
+Django==6.0.2
+djangorestframework
+drf-yasg
+django-redis
+mysqlclient
+gunicorn
+pytest
+pytest-order
