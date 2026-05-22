@@ -1,10 +1,16 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from orders.infrastructure.singletons import product_service
+from orders.infrastructure.serializers.product import ProdutoSerializer
 
 class ProductListView(APIView):
+    @swagger_auto_schema(
+        responses={200: ProdutoSerializer(many=True)},
+        operation_description="Lista todos os produtos."
+    )
     def get(self, request):
         """
         Lista todos os produtos.
@@ -35,8 +41,27 @@ class ProductListView(APIView):
         """
         produto = product_service.criar_produto(request.data)
         return Response(produto.to_dict(), status=status.HTTP_201_CREATED)
+    @swagger_auto_schema(
+        request_body=ProdutoSerializer,
+        responses={201: ProdutoSerializer},
+        operation_description="Cria um novo produto."
+    )
+    def post(self, request):
+        produto = product_service.criar_produto(request.data)
+        return Response(produto.to_dict(), status=status.HTTP_201_CREATED)
 
 class ProductStockUpdateView(APIView):
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'stock_quantity': openapi.Schema(type=openapi.TYPE_INTEGER, description='Nova quantidade de estoque')
+            },
+            required=['stock_quantity']
+        ),
+        responses={200: ProdutoSerializer, 404: 'Produto não encontrado'},
+        operation_description="Atualiza o estoque de um produto."
+    )
     def patch(self, request, sku):
         """
         Atualiza o estoque de um produto.

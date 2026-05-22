@@ -43,6 +43,12 @@ class ApiRootView(APIView):
 
 class CustomerListView(APIView):
 
+    from drf_yasg.utils import swagger_auto_schema
+
+    @swagger_auto_schema(
+        responses={200: ClienteSerializer(many=True)},
+        operation_description="Lista todos os clientes cadastrados."
+    )
     def get(self, request):
         """
         Lista todos os clientes cadastrados.
@@ -63,6 +69,11 @@ class CustomerListView(APIView):
         serializer = ClienteSerializer(clientes, many=True)
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+        request_body=ClienteSerializer,
+        responses={201: ClienteSerializer},
+        operation_description="Cria um novo cliente."
+    )
     def post(self, request):
         """
         Cria um novo cliente.

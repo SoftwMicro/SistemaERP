@@ -1,50 +1,19 @@
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from orders.infrastructure.singletons import order_service
-#  Serializers simples para resposta JSON
-class OrderItemSerializer:
-    def __init__(self, obj):
-        self.obj = obj
-    def data(self):
-        return {
-            'produto': self.obj.produto,
-            'quantidade': self.obj.quantidade,
-            'preco_unitario': self.obj.preco_unitario,
-            'subtotal': self.obj.subtotal
-        }
-
-class OrderStatusHistorySerializer:
-    def __init__(self, obj):
-        self.obj = obj
-    def data(self):
-        return {
-            'data_hora': self.obj.data_hora.isoformat(),
-            'status_anterior': self.obj.status_anterior,
-            'novo_status': self.obj.novo_status,
-            'usuario': self.obj.usuario,
-            'observacoes': self.obj.observacoes
-        }
-
-class OrderSerializer:
-    def __init__(self, obj):
-        self.obj = obj
-    def data(self):
-        return {
-            'numero': self.obj.numero,
-            'data_criacao': self.obj.data_criacao.isoformat(),
-            'cliente': getattr(self.obj.cliente, 'nome', str(self.obj.cliente)),
-            'status': self.obj.status,
-            'valor_total': self.obj.valor_total,
-            'observacoes': self.obj.observacoes,
-            'itens': [OrderItemSerializer(item).data() for item in self.obj.itens],
-            'historico_status': [OrderStatusHistorySerializer(h).data() for h in self.obj.historico_status]
-        }
+from orders.infrastructure.serializers.order import OrderSerializer, OrderItemSerializer, OrderStatusHistorySerializer
 
 
 
 class OrderListCreateView(APIView):
+    @swagger_auto_schema(
+        responses={200: OrderSerializer(many=True)},
+        operation_description="Lista todos os pedidos."
+    )
     def get(self, request):
         """
         Lista todos os pedidos.
@@ -73,6 +42,29 @@ class OrderListCreateView(APIView):
         data = [OrderSerializer(p).data() for p in pedidos]
         return Response(data)
 
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'cliente': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID do cliente'),
+                'itens': openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Items(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'produto': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID do produto'),
+                            'quantidade': openapi.Schema(type=openapi.TYPE_INTEGER, description='Quantidade')
+                        },
+                        required=['produto', 'quantidade']
+                    )
+                ),
+                'observacoes': openapi.Schema(type=openapi.TYPE_STRING, description='Observações', default='')
+            },
+            required=['cliente', 'itens']
+        ),
+        responses={201: OrderSerializer},
+        operation_description="Cria um novo pedido."
+    )
     def post(self, request):
         """
         Cria um novo pedido.
@@ -92,12 +84,20 @@ class OrderListCreateView(APIView):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class OrderDetailView(APIView):
+    @swagger_auto_schema(
+        responses={200: OrderSerializer, 404: 'Pedido não encontrado'},
+        operation_description="Obtém detalhes de um pedido."
+    )
     def get(self, request, id):
         pedido = order_service.obter_pedido(id)
         if pedido:
             return Response(OrderSerializer(pedido).data())
         return Response({'error': 'Pedido não encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
+    @swagger_auto_schema(
+        responses={200: OrderSerializer, 400: 'Erro ao cancelar pedido'},
+        operation_description="Cancela um pedido."
+    )
     def delete(self, request, id):
         try:
             pedido = order_service.cancelar_pedido(id, usuario='sistema')
@@ -106,6 +106,19 @@ class OrderDetailView(APIView):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class OrderStatusUpdateView(APIView):
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'status': openapi.Schema(type=openapi.TYPE_STRING, description='Novo status'),
+                'usuario': openapi.Schema(type=openapi.TYPE_STRING, description='Usuário', default='sistema'),
+                'observacoes': openapi.Schema(type=openapi.TYPE_STRING, description='Observações', default='')
+            },
+            required=['status']
+        ),
+        responses={200: OrderSerializer, 400: 'Erro ao alterar status'},
+        operation_description="Altera o status de um pedido."
+    )
     def patch(self, request, id):
         novo_status = request.data.get('status')
         usuario = request.data.get('usuario', 'sistema')
