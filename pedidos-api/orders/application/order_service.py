@@ -78,9 +78,6 @@ class OrderService:
             redis_lock.release_lock(sku)
         return pedido
 
-        pedido = Order(cliente=cliente, itens=itens, observacoes=dados.get('observacoes'))
-        self.repository.salvar(pedido)
-        return pedido
 
     def listar_pedidos(self):
         return self.repository.listar()
