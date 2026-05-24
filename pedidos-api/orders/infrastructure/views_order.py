@@ -39,7 +39,7 @@ class OrderListCreateView(APIView):
         ]
         """
         pedidos = order_service.listar_pedidos()
-        data = [OrderSerializer(p).data() for p in pedidos]
+        data = [OrderSerializer(p).data for p in pedidos]
         return Response(data)
 
     @swagger_auto_schema(
@@ -79,7 +79,7 @@ class OrderListCreateView(APIView):
         """
         try:
             pedido = order_service.criar_pedido(request.data)
-            return Response(OrderSerializer(pedido).data(), status=status.HTTP_201_CREATED)
+            return Response(OrderSerializer(pedido).data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -91,7 +91,7 @@ class OrderDetailView(APIView):
     def get(self, request, id):
         pedido = order_service.obter_pedido(id)
         if pedido:
-            return Response(OrderSerializer(pedido).data())
+            return Response(OrderSerializer(pedido).data)
         return Response({'error': 'Pedido não encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
     @swagger_auto_schema(
@@ -101,7 +101,7 @@ class OrderDetailView(APIView):
     def delete(self, request, id):
         try:
             pedido = order_service.cancelar_pedido(id, usuario='sistema')
-            return Response(OrderSerializer(pedido).data())
+            return Response(OrderSerializer(pedido).data)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

@@ -36,7 +36,7 @@ class OrderService:
             # Primeiro: Lock e checagem de estoque para todos os itens
             for item in dados['itens']:
                 produto = self.product_service.repository.listar()
-                produto = next((p for p in produto if p.sku == item['produto']), None)
+                produto = next((p for p in produto if p.id == item['produto']), None)
                 if not produto:
                     raise ValueError(f"Produto {item['produto']} não encontrado")
                 if hasattr(produto, 'is_active') and not produto.is_active:
@@ -47,7 +47,7 @@ class OrderService:
                 locked_skus.append(produto.sku)
                 # Checagem de estoque
                 produto_atual = self.product_service.repository.listar()
-                produto_atual = next((p for p in produto_atual if p.sku == item['produto']), None)
+                produto_atual = next((p for p in produto_atual if p.id == item['produto']), None)
                 if produto_atual.stock_quantity < item['quantidade']:
                     raise ValueError(f"Estoque insuficiente para o produto {produto.sku}")
                 # Guarda info para segunda etapa

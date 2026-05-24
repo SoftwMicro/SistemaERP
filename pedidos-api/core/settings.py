@@ -93,10 +93,7 @@ DATABASES = {
         'USER': 'admin',
         'PASSWORD': '010101',
         'HOST': 'localhost',
-        'PORT': '3306',
-        'TEST': {
-            'NAME': 'pedidos_test',  # banco fixo para testes
-        },
+        'PORT': '3306'
     }
 }
 
