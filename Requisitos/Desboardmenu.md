@@ -11,11 +11,13 @@ Criar uma tela de **Dashboard** que ocupa todo o espaço da janela principal e c
     - Cliente
   - **Pedido**
     - Solicitar Pedido
+    - Pedidos
 
 ## Comportamento do Menu
 - Ao clicar em **Cadastro > Produto**, deve abrir a tela `produto_form.py`.
 - Ao clicar em **Cadastro > Cliente**, deve abrir a tela correspondente ao cadastro de clientes.
 - Ao clicar em **Pedido > Solicitar Pedido**, deve abrir a tela de solicitação de pedidos.
+- Ao clicear em **Pedido > Pedido**, deve abrir a tela de Pedidos.
 
 ## Requisitos Funcionais
 - O menu deve estar sempre visível na parte superior da tela.
