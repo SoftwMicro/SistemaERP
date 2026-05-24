@@ -18,7 +18,8 @@ class ProductRepository(ProductRepository):
             description=produto_model.descricao,
             price=produto_model.preco,
             stock_quantity=produto_model.quantidade_estoque,
-            is_active=produto_model.ativo
+            is_active=produto_model.ativo,
+            id=produto_model.id
         )
         return produto
 
@@ -31,7 +32,8 @@ class ProductRepository(ProductRepository):
                 description=produto_model.descricao,
                 price=produto_model.preco,
                 stock_quantity=produto_model.quantidade_estoque,
-                is_active=produto_model.ativo
+                is_active=produto_model.ativo,
+                id=produto_model.id
             )
             produtos.append(produto)
         return produtos
@@ -47,7 +49,8 @@ class ProductRepository(ProductRepository):
                 description=produto_model.descricao,
                 price=produto_model.preco,
                 stock_quantity=produto_model.quantidade_estoque,
-                is_active=produto_model.ativo
+                is_active=produto_model.ativo,
+                id=produto_model.id
             )
             return produto
         except ProdutoModel.DoesNotExist:

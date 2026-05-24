@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 class ProdutoSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
     sku = serializers.CharField(max_length=30)
     nome = serializers.CharField(max_length=100)
     descricao = serializers.CharField()
