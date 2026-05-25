@@ -7,17 +7,16 @@ Criar uma tela de **Dashboard** que ocupa todo o espaço da janela principal e c
 - A tela deve ser maximizada ou ocupar todo o espaço disponível.
 - Deve conter um **menu principal** com os seguintes módulos:
   - **Cadastro**
-    - Produto
     - Cliente
-  - **Pedido**
+    - Produto
+  - **Gerenciar Pedidos **
     - Solicitar Pedido
     - Pedidos
 
 ## Comportamento do Menu
 - Ao clicar em **Cadastro > Produto**, deve abrir a tela `produto_form.py`.
-- Ao clicar em **Cadastro > Cliente**, deve abrir a tela correspondente ao cadastro de clientes.
-- Ao clicar em **Pedido > Solicitar Pedido**, deve abrir a tela de solicitação de pedidos.
-- Ao clicear em **Pedido > Pedido**, deve abrir a tela de Pedidos.
+- Ao clicar em **Cadastro > Cliente**, deve abrir a tela correspondente ao cadastro de clientes. `cliente_form.py`
+- Ao clicear em **Gerenciar Pedidos > Solicitar Pedido, Pedidos,**, deve abrir a Selicitar pedidos: `order_form.py` tela de listar pedidos:  `order_form_list.py`
 
 ## Requisitos Funcionais
 - O menu deve estar sempre visível na parte superior da tela.

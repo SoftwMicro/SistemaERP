@@ -1,8 +1,10 @@
-
 from orders.domain.order import Order
 from orders.domain.order_item import OrderItem
 from orders.domain.order_status_history import OrderStatusHistory
 from orders.infrastructure.redis_services import RedisLock, RedisIdempotency
+from orders.models import Order as OrderModel
+from orders.models import OrderStatusHistory as OrderStatusHistoryModel
+
 
 class OrderService:
     def __init__(self, repository, cliente_service, product_service):
@@ -103,10 +105,8 @@ class OrderService:
             raise ValueError(f"Transição de status inválida: {status_atual} → {novo_status}")
         pedido.adicionar_status(novo_status, usuario, observacoes)
         # Atualiza apenas o status do pedido existente
-        from orders.models import Order as OrderModel
         OrderModel.objects.filter(id=pedido.numero).update(status=novo_status)
         # Persiste histórico de status
-        from orders.models import OrderStatusHistory as OrderStatusHistoryModel
         OrderStatusHistoryModel.objects.create(
             pedido_id=pedido.numero,
             data_hora=pedido.historico_status[-1].data_hora,

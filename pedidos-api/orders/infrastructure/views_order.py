@@ -125,6 +125,6 @@ class OrderStatusUpdateView(APIView):
         observacoes = request.data.get('observacoes')
         try:
             pedido = order_service.alterar_status(id, novo_status, usuario, observacoes)
-            return Response(OrderSerializer(pedido).data())
+            return Response(OrderSerializer(pedido).data)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

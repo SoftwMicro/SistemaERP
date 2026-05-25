@@ -39,12 +39,15 @@ class ClienteController:
         return []
 
 # --- View ---
-class ClienteForm(tk.Tk):
-    def __init__(self):
-        super().__init__()
-        self.title("Cadastro de Cliente")
-        self.geometry("900x400")
-        self.resizable(False, False)
+class ClienteForm(tk.Frame):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.parent = parent
+        if parent is None:
+            self.pack(fill=tk.BOTH, expand=True)
+            self.master.title("Cadastro de Cliente")
+            self.master.geometry("900x400")
+            self.master.resizable(False, False)
         self.create_widgets()
         self.atualizar_grid()
 
@@ -135,5 +138,6 @@ class ClienteForm(tk.Tk):
         self.ativo_var.set(True)
 
 if __name__ == "__main__":
-    app = ClienteForm()
-    app.mainloop()
+    root = tk.Tk()
+    app = ClienteForm(root)
+    root.mainloop()

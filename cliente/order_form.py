@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import requests
 import json
+import random
 
 API_BASE = "http://localhost:8000/api/v1"
 
@@ -63,12 +64,15 @@ class PedidoController:
         return resp
 
 # --- View ---
-class PedidoForm(tk.Tk):
-    def __init__(self):
-        super().__init__()
-        self.title("Solicitar Pedido")
-        self.geometry("1000x600")
-        self.resizable(False, False)
+class PedidoForm(tk.Frame):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.parent = parent
+        if parent is None:
+            self.pack(fill=tk.BOTH, expand=True)
+            self.master.title("Solicitar Pedido")
+            self.master.geometry("1000x600")
+            self.master.resizable(False, False)
         self.selected_cliente = None
         self.produtos = []
         self.create_widgets()
@@ -99,11 +103,6 @@ class PedidoForm(tk.Tk):
             self.produto_tree.column(col, width=100)
         self.produto_tree.grid(row=3, column=0, columnspan=4, padx=5, pady=5, sticky="nsew")
         self.produto_tree.bind('<Double-1>', self.editar_quantidade_produto)
-
-        # Quantidade Solicitada
-        ttk.Label(self, text="Quantidade Solicitada:").grid(row=4, column=0, padx=5, pady=5, sticky="w")
-        self.qtd_entry = ttk.Entry(self, width=10)
-        self.qtd_entry.grid(row=4, column=1, padx=5, pady=5, sticky="w")
 
         # Observações
         ttk.Label(self, text="Observações:").grid(row=5, column=0, padx=5, pady=5, sticky="w")
@@ -198,11 +197,12 @@ class PedidoForm(tk.Tk):
             itens.append({"produto": produto_id, "quantidade": int(qtd_solicitada)})
 
         observacoes = self.obs_entry.get().strip()
-
+ 
         payload = {
             "cliente_id": selected_cliente.id,
             "itens": itens,
-            "observacoes": observacoes
+            "observacoes": observacoes,
+            "idempotency_key": f"AUTO{random.randint(10000,99999)}"
         }
         print("JSON enviado para /orders:")
         print(json.dumps(payload, ensure_ascii=False, indent=2))
@@ -218,5 +218,6 @@ class PedidoForm(tk.Tk):
         self.pedido_btn.config(state=tk.NORMAL, text="Realizar Pedido")
 
 if __name__ == "__main__":
-    app = PedidoForm()
-    app.mainloop()
+    root = tk.Tk()
+    app = PedidoForm(root)
+    root.mainloop()
