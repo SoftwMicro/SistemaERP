@@ -3,10 +3,10 @@ from tkinter import ttk
 from tkinter import messagebox
 import importlib
 
-class Dashboard(tk.Tk):
+class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Dashboard - SistemaERP")
+        self.title("Sistema ERP")
         self.state('zoomed')  # Maximiza a janela
         self.create_menu()
         self.current_window = None
@@ -59,5 +59,5 @@ class Dashboard(tk.Tk):
         form.pack(fill=tk.BOTH, expand=True)
 
 if __name__ == "__main__":
-    app = Dashboard()
+    app = App()
     app.mainloop()

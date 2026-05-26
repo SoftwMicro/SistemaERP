@@ -33,6 +33,10 @@ staticfiles/
 *.log
 docker-compose.override.yml
 
+# PyInstaller
+build/
+dist/
+
 # Redis dump
 dump.rdb
 
