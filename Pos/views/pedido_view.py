@@ -54,6 +54,11 @@ class PedidoView:
         ttk.Button(total_frame, text="Finalizar Pedido", command=self.finalizar_pedido).pack(side='left', padx=5)
 
     def selecionar_cliente(self):
+        conteudo = self.cliente_id_var.get().strip()
+        if not conteudo:
+            messagebox.showerror("Erro", Messages.ERRO_ENTRY)
+            self.cliente_id_var.set("")
+
         controller = ClienteController()
         filtro = self.cliente_id_var.get()
         cliente = None
@@ -67,7 +72,10 @@ class PedidoView:
             self.controller.selecionar_cliente(cliente)
             self.cliente_nome_label.config(text=f"Selecionado: {cliente['nome']}")
         else:
+            self.cliente_nome_label.config(text=f"")
             messagebox.showerror("Erro", Messages.ERROR_NO_CLIENT)
+            
+
 
     def adicionar_produto(self):
         controller = ProdutoController()

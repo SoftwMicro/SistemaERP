@@ -26,7 +26,7 @@ class VendasView:
             self.tree.delete(i)
         pedidos = self.controller.listar_pedidos()
         for p in pedidos:
-            self.tree.insert('', 'end', values=(p['id'], p['cliente'], p['data_criacao'], p['status'], f"R$ {p['valor_total']:.2f}"))
+            self.tree.insert('', 'end', values=(p['id'], p['cliente'], p['data_criacao'].strftime("%d/%m/%Y"), p['status'], f"R$ {p['valor_total']:.2f}"))
 
     def cancelar_pedido(self):
         pedido_id = self.obter_pedido_id_selecionado()

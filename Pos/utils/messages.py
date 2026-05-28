@@ -9,6 +9,7 @@ class Messages:
     SUCCESS_CANCEL = "Pedido cancelado com sucesso."
     SUCCESS_DELETE = "Pedido deletado com sucesso."
     ERROR_TRANSACTION = "Erro na transação. Nenhuma alteração foi realizada."
+    ERRO_ENTRY = "Entrada inválida. Verifique os dados e tente novamente."
     @staticmethod
     def feedback(message, success=True):
         return message
