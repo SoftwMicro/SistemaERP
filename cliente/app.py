@@ -3,6 +3,14 @@ from tkinter import ttk
 from tkinter import messagebox
 import importlib
 
+# Imports explícitos para garantir inclusão pelo PyInstaller
+import cliente_form
+import produto_form
+import order_form
+import order_form_list
+
+
+
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -36,25 +44,25 @@ class App(tk.Tk):
 
     def abrir_cliente(self):
         self.limpar_main_frame()
-        modulo = importlib.import_module("cliente_form")
+        modulo = cliente_form
         form = modulo.ClienteForm(self.main_frame)
         form.pack(fill=tk.BOTH, expand=True)
 
     def abrir_produto(self):
         self.limpar_main_frame()
-        modulo = importlib.import_module("produto_form")
+        modulo = produto_form
         form = modulo.ProdutoForm(self.main_frame)
         form.pack(fill=tk.BOTH, expand=True)
 
     def abrir_solicitar_pedido(self):
         self.limpar_main_frame()
-        modulo = importlib.import_module("order_form")
+        modulo = order_form
         form = modulo.PedidoForm(self.main_frame)
         form.pack(fill=tk.BOTH, expand=True)
 
     def abrir_listar_pedidos(self):
         self.limpar_main_frame()
-        modulo = importlib.import_module("order_form_list")
+        modulo = order_form_list
         form = modulo.OrderListForm(self.main_frame)
         form.pack(fill=tk.BOTH, expand=True)
 
