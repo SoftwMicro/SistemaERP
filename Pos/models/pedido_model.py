@@ -25,6 +25,20 @@ class PedidoModel:
         cursor.close()
         db.close()
         return result
+    
+    @staticmethod
+    def buscar_por_id(pedido_id):
+        db = DatabaseConnection()
+        conn = db.get_connection()
+        cursor = conn.cursor(dictionary=True)
+        query = ("SELECT * FROM orders_order WHERE id = %s")
+        cursor.execute(query, (pedido_id,))
+        result = cursor.fetchone()
+        cursor.close()
+        db.close()
+        return result
+
+
 
     @staticmethod
     def criar_pedido(data_criacao, status, valor_total, observacoes, cliente_id, idempotency_key=None):
