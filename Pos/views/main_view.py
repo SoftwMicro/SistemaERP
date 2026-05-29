@@ -1,4 +1,5 @@
 import tkinter as tk
+import os, sys
 from tkinter import ttk, messagebox
 from .cliente_view import ClienteView
 from .produto_view import ProdutoView
@@ -9,6 +10,15 @@ class MainView:
         self.root = tk.Tk()
         self.root.title("POS - Sistema de Vendas")
         self.root.geometry("900x600")
+        # Caminho do ícone para PyInstaller e execução normal
+        if hasattr(sys, '_MEIPASS'):
+            icon_path = os.path.join(sys._MEIPASS, 'app.ico')
+        else:
+            icon_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'app.ico'))
+        try:
+            self.root.iconbitmap(icon_path)
+        except Exception as e:
+            pass  # Se não conseguir definir o ícone, ignora
         self.create_widgets()
 
     def create_widgets(self):
