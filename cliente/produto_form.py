@@ -45,7 +45,8 @@ class ProdutoForm(tk.Frame):
             self.master.resizable(False, False)
         self.model = ProdutoModel()
         self.create_widgets()
-        self.atualizar_grid()
+        if hasattr(self, 'tree'):
+            self.atualizar_grid()
 
     def create_widgets(self):
         # SKU
@@ -62,11 +63,6 @@ class ProdutoForm(tk.Frame):
         ttk.Label(self, text="Descrição:").grid(row=2, column=0, padx=10, pady=10, sticky="w")
         self.description_entry = ttk.Entry(self)
         self.description_entry.grid(row=2, column=1, padx=10, pady=10, sticky="ew")
-
-        # Preço
-        ttk.Label(self, text="Preço:").grid(row=3, column=0, padx=10, pady=10, sticky="w")
-        self.price_entry = ttk.Entry(self)
-        self.price_entry.grid(row=3, column=1, padx=10, pady=10, sticky="ew")
 
         # Quantidade em Estoque
         ttk.Label(self, text="Quantidade em Estoque:").grid(row=4, column=0, padx=10, pady=10, sticky="w")
@@ -98,6 +94,25 @@ class ProdutoForm(tk.Frame):
         # Ajuste de colunas
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(7, weight=1)
+
+        # Preço
+        ttk.Label(self, text="Preço:").grid(row=3, column=0, padx=10, pady=10, sticky="w")
+        self.price_var = tk.StringVar()
+        self.price_entry = ttk.Entry(self, textvariable=self.price_var)
+        self.price_entry.grid(row=3, column=1, padx=10, pady=10, sticky="ew")
+        self.price_entry.bind('<FocusOut>', self.formatar_moeda_event)
+        
+    def formatar_moeda_event(self, event=None):
+        valor = self.price_var.get()
+        # Remove tudo que não for número
+        numeros = ''.join(filter(str.isdigit, valor))
+        if not numeros:
+            self.price_var.set('')
+            return
+        valor_float = float(numeros)
+        self.price_var.set(f'R$ {valor_float:,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.'))
+
+
     def on_tree_select(self, event):
         selected = self.tree.selection()
         if not selected:
