@@ -95,8 +95,8 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('DB_NAME', 'pedidos'),
-        'USER': os.getenv('DB_USER', 'admin'),
+        'NAME': os.getenv('DB_NAME', 'pedidos_homologue'),
+        'USER': os.getenv('DB_USER', 'phmg'),
         'PASSWORD': os.getenv('DB_PASSWORD', '010101'),
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '3306')
