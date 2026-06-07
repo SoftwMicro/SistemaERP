@@ -1,8 +1,13 @@
+import os
+
 # Redis cache configuration
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
+        "LOCATION": "redis://{host}:{port}/1".format(
+            host=os.getenv('REDIS_HOST', '127.0.0.1'),
+            port=os.getenv('REDIS_PORT', '6379')
+        ),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
@@ -30,12 +35,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure--e85aazb($ect4u6sqy%abi6+q#jli6)g#^&vs!15p72^cd!)f'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure--e85aazb($ect4u6sqy%abi6+q#jli6)g#^&vs!15p72^cd!)f')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '*').split(',')
 
 
 # Application definition
@@ -89,11 +94,11 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'pedidos',
-        'USER': 'admin',
-        'PASSWORD': '010101',
-        'HOST': 'localhost',
-        'PORT': '3306'
+        'NAME': os.getenv('DB_NAME', 'pedidos'),
+        'USER': os.getenv('DB_USER', 'admin'),
+        'PASSWORD': os.getenv('DB_PASSWORD', '010101'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '3306')
     }
 }
 

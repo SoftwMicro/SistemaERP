@@ -103,14 +103,19 @@ class ProdutoForm(tk.Frame):
         self.price_entry.bind('<FocusOut>', self.formatar_moeda_event)
         
     def formatar_moeda_event(self, event=None):
-        valor = self.price_var.get()
-        # Remove tudo que não for número
-        numeros = ''.join(filter(str.isdigit, valor))
-        if not numeros:
+        valor = self.price_var.get().strip()
+        if not valor:
             self.price_var.set('')
             return
-        valor_float = float(numeros)
-        self.price_var.set(f'R$ {valor_float:,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.'))
+        valor = valor.replace('R$', '').replace(' ', '').replace(',', '.')
+        try:
+            valor_float = float(valor)
+            valor_formatado = f'R$ {valor_float:,.2f}'
+            valor_formatado = valor_formatado.replace(',', 'X').replace('.', ',').replace('X', '.')
+            self.price_var.set(valor_formatado)
+        except ValueError:
+            self.price_var.set('')
+
 
 
     def on_tree_select(self, event):
