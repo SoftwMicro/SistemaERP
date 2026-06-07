@@ -10,6 +10,7 @@ RUN apt-get update && \
         gcc \
         libssl-dev \
         libffi-dev \
+        pkg-config \
         curl && \
     rm -rf /var/lib/apt/lists/*
 
