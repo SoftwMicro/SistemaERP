@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f2f4f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .login-box {
+            width: 100%;
+            max-width: 400px;
+            background: #fff;
+            padding: 30px;
+            border-radius: 14px;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+        }
+        h1 {
+            margin-top: 0;
+            margin-bottom: 24px;
+            font-size: 24px;
+            color: #101828;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #334155;
+            font-size: 14px;
+        }
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            margin-bottom: 18px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #0f172a;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px 14px;
+            background: #2563eb;
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 15px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        .errors {
+            margin-bottom: 16px;
+            padding: 12px 14px;
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            border-radius: 10px;
+            color: #991b1b;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h1>Login</h1>
+        {% if form.errors %}
+            <div class="errors">
+                <p>Por favor corrija os erros abaixo.</p>
+                {{ form.errors }}
+            </div>
+        {% endif %}
+        <form method="post" action="{% url 'login' %}">
+            {% csrf_token %}
+            <label for="id_username">Usuário</label>
+            {{ form.username }}
+
+            <label for="id_password">Senha</label>
+            {{ form.password }}
+
+            <input type="hidden" name="next" value="{{ next }}">
+            <button type="submit">Entrar</button>
+        </form>
+    </div>
+</body>
+</html>
