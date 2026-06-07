@@ -4,5 +4,6 @@ drf-yasg
 django-redis
 mysqlclient
 gunicorn
+whitenoise
 pytest
 pytest-order

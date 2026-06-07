@@ -29,5 +29,6 @@ COPY --from=builder /root/.local /root/.local
 COPY . .
 ENV PATH=/root/.local/bin:$PATH
 ENV PORT=8000
+RUN python manage.py collectstatic --noinput
 EXPOSE 8000
 CMD ["sh", "-c", "gunicorn core.wsgi:application --bind 0.0.0.0:${PORT}"]
