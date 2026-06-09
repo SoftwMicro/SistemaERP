@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
 
+from ..auth_context import set_current_user
 from .register_view import RegisterView
 from .telainicial import TelaInicial
 
@@ -46,6 +47,7 @@ class LoginView:
         senha = self.senha_entry.get().strip()
         try:
             usuario = self.controller.login(login, senha)
+            set_current_user(usuario)
             messagebox.showinfo(
                 "Bem-vindo",
                 f"Usuário {usuario.nome} autenticado com sucesso!\nPerfil: {usuario.perfil}",

@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 
+
+
 class TelaInicial:
     """Tela inicial do sistema após login bem-sucedido."""
 
@@ -77,7 +79,7 @@ class TelaInicial:
             scrollable_frame,
             "📦 OPERAÇÕES DE CAIXA",
             [
-                ("🔓 Abertura de Caixa", None),
+                ("🔓 Abertura de Caixa", self._abrir_caixa),
                 ("🔒 Fechamento de Caixa", None),
             ]
         )
@@ -125,15 +127,16 @@ class TelaInicial:
         module_frame.pack(fill="x", padx=5, pady=8)
         
         for label, callback in submenu_items:
+            command = callback if callable(callback) else lambda l=label: messagebox.showinfo(
+                "Aviso",
+                f"{l} será implementado em breve.",
+                parent=self.root
+            )
             ttk.Button(
                 module_frame,
                 text=label,
                 width=28,
-                command=lambda l=label: messagebox.showinfo(
-                    "Aviso",
-                    f"{l} será implementado em breve.",
-                    parent=self.root
-                )
+                command=command,
             ).pack(fill="x", pady=3)
 
     def _build_content_area(self, parent) -> None:
@@ -187,6 +190,55 @@ Módulos Disponíveis:
             font=("Arial", 9),
             foreground="gray"
         ).grid(row=4, column=0, sticky="e", pady=10)
+
+        # Caixa atual (grid resumida)
+        caixa_frame = ttk.LabelFrame(content_frame, text="Caixa Atual", padding=8)
+        caixa_frame.grid(row=1, column=0, sticky="ew", padx=20, pady=(0, 20))
+        caixa_frame.grid_columnconfigure(0, weight=1)
+
+        columns = ("dataAbertura", "saldoInicial", "status")
+        self.caixa_tree = ttk.Treeview(caixa_frame, columns=columns, show="headings", height=1)
+        self.caixa_tree.heading("dataAbertura", text="Data Abertura")
+        self.caixa_tree.heading("saldoInicial", text="Saldo Inicial")
+        self.caixa_tree.heading("status", text="Status")
+        self.caixa_tree.column("dataAbertura", width=220)
+        self.caixa_tree.column("saldoInicial", width=120, anchor="e")
+        self.caixa_tree.column("status", width=120)
+        self.caixa_tree.grid(row=0, column=0, sticky="ew")
+
+        # placeholder quando não há caixa aberto
+        self._set_caixa_placeholder()
+
+    def _abrir_caixa(self) -> None:
+        from .caixa_abertura_view import CaixaAberturaView
+
+        CaixaAberturaView(self)
+
+    def _set_caixa_placeholder(self) -> None:
+        # Remove linhas existentes e mostra mensagem de vazio
+        for i in self.caixa_tree.get_children():
+            self.caixa_tree.delete(i)
+        self.caixa_tree.insert("", "end", values=("—", "—", "—"))
+
+    def update_caixa(self, caixa_data: dict) -> None:
+        """Atualiza a grid de caixa com os dados retornados pela API.
+
+        Espera um dicionário contendo as chaves: `dataAbertura`, `saldoInicial`, `status`.
+        """
+        for i in self.caixa_tree.get_children():
+            self.caixa_tree.delete(i)
+
+        data_abertura = caixa_data.get("dataAbertura") or caixa_data.get("dataAbertura")
+        saldo_inicial = caixa_data.get("saldoInicial")
+        status = caixa_data.get("status")
+
+        # Formatar saldo
+        try:
+            saldo_text = f"{float(saldo_inicial):.2f}" if saldo_inicial is not None else "—"
+        except Exception:
+            saldo_text = str(saldo_inicial)
+
+        self.caixa_tree.insert("", "end", values=(data_abertura or "—", saldo_text, status or "—"))
 
     def _logout(self) -> None:
         """Callback para logout."""

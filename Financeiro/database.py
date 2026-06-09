@@ -1,5 +1,4 @@
-import mysql.connector
-from mysql.connector import Error
+from __future__ import annotations
 from .config import DatabaseConfig
 
 
@@ -7,7 +6,9 @@ class Database:
     def __init__(self, config: DatabaseConfig | None = None):
         self.config = config or DatabaseConfig()
 
-    def get_connection(self) -> mysql.connector.connection_cext.CMySQLConnection:
+    def get_connection(self) -> "mysql.connector.connection_cext.CMySQLConnection":
+        import mysql.connector
+
         return mysql.connector.connect(
             host=self.config.host,
             database=self.config.database,
@@ -17,6 +18,8 @@ class Database:
         )
 
     def test(self) -> bool:
+        from mysql.connector import Error
+
         try:
             with self.get_connection() as connection:
                 return connection.is_connected()
