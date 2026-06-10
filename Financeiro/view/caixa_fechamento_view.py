@@ -1,21 +1,20 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from ..auth_context import get_current_user
 from ..repository.caixa_repository import CaixaRepository
 
 
-class CaixaAberturaView:
-    """Janela de abertura de caixa para informar saldo inicial e chamar a API."""
+class CaixaFechamentoView:
+    """Janela de fechamento de caixa para informar saldo final e chamar a API."""
 
-    def __init__(self, owner):
-        # owner is TelaInicial instance; use its root as parent
+    def __init__(self, owner, caixa_id: int):
         self.owner = owner
-        parent = getattr(owner, "root", owner)
-        self.parent = parent
+        self.caixa_id = caixa_id
         self.repository = CaixaRepository()
+
+        parent = getattr(owner, "root", owner)
         self.window = tk.Toplevel(parent)
-        self.window.title("Abertura de Caixa")
+        self.window.title("Fechamento de Caixa")
         self.window.resizable(False, False)
         self.window.grab_set()
         self._build_form()
@@ -24,13 +23,16 @@ class CaixaAberturaView:
         frame = ttk.Frame(self.window, padding=16)
         frame.grid(row=0, column=0, sticky="nsew")
 
-        ttk.Label(frame, text="Saldo Inicial:").grid(row=0, column=0, sticky="w", pady=4)
+        ttk.Label(frame, text="ID do Caixa:").grid(row=0, column=0, sticky="w", pady=4)
+        ttk.Label(frame, text=str(self.caixa_id)).grid(row=0, column=1, sticky="w", pady=4)
+
+        ttk.Label(frame, text="Saldo Final:").grid(row=1, column=0, sticky="w", pady=4)
         self.saldo_entry = ttk.Entry(frame, width=32)
-        self.saldo_entry.grid(row=0, column=1, pady=4)
+        self.saldo_entry.grid(row=1, column=1, pady=4)
         self.saldo_entry.bind("<Return>", self._on_saldo_focus_out)
 
         button_frame = ttk.Frame(frame)
-        button_frame.grid(row=1, column=0, columnspan=2, pady=12)
+        button_frame.grid(row=2, column=0, columnspan=2, pady=12)
 
         self.save_button = ttk.Button(button_frame, text="Salvar", command=self._on_save)
         self.save_button.grid(row=0, column=0, padx=6)
@@ -39,38 +41,33 @@ class CaixaAberturaView:
     def _on_save(self) -> None:
         saldo_text = self.saldo_entry.get().strip()
         if not saldo_text:
-            messagebox.showerror("Erro", "Informe o saldo inicial.", parent=self.window)
+            messagebox.showerror("Erro", "Informe o saldo final.", parent=self.window)
             return
 
         try:
-            saldo = float(saldo_text.replace(",", "."))
+            saldo_final = float(saldo_text.replace(",", "."))
         except ValueError:
-            messagebox.showerror("Erro", "Saldo inicial deve ser um número válido.", parent=self.window)
+            messagebox.showerror("Erro", "Saldo final deve ser um número válido.", parent=self.window)
             return
 
-        # prevenir duplo clique
         try:
             self.save_button.config(state="disabled")
         except Exception:
             pass
 
         try:
-            response = self._send_open_cash_request(saldo)
+            response = self._send_close_cash_request(saldo_final)
             messagebox.showinfo(
                 "Sucesso",
-                f"Caixa aberto com sucesso.\nID: {response.get('id')}\nStatus: {response.get('status')}",
+                f"Fechamento realizado com sucesso.\nID: {response.get('id')}\nStatus: {response.get('status')}",
                 parent=self.window,
             )
-            # Carrega as últimas aberturas e atualiza a grade na tela principal
             try:
                 if hasattr(self.owner, "update_caixa_list"):
-                    usuario = get_current_user()
-                    if usuario and usuario.id:
-                        aberturas = self.repository.obter_aberturas_fechamentos(usuario.id)
-                        self.owner.update_caixa_list(aberturas)
+                    aberturas = self.repository.obter_aberturas_fechamentos(getattr(self.owner, 'usuario').id)
+                    self.owner.update_caixa_list(aberturas)
             except Exception as error:
-                messagebox.showerror("Aviso", f"Caixa aberto, mas erro ao atualizar grade: {error}", parent=self.window)
-            
+                messagebox.showerror("Aviso", f"Caixa fechado, mas erro ao atualizar grade: {error}", parent=self.window)
             self.window.destroy()
         except ValueError as error:
             messagebox.showerror("Erro", str(error), parent=self.window)
@@ -85,12 +82,8 @@ class CaixaAberturaView:
             except Exception:
                 pass
 
-    def _send_open_cash_request(self, saldo: float) -> dict:
-        usuario = get_current_user()
-        if usuario is None or usuario.id is None:
-            raise ValueError("Usuário não autenticado. Faça login e tente novamente.")
-
-        return self.repository.abrir_caixa(usuario.id, saldo)
+    def _send_close_cash_request(self, saldo_final: float) -> dict:
+        return self.repository.fechar_caixa(self.caixa_id, saldo_final)
 
     def _on_saldo_focus_out(self, event: tk.Event) -> None:
         text = self.saldo_entry.get().strip()
@@ -102,7 +95,6 @@ class CaixaAberturaView:
             self.saldo_entry.delete(0, tk.END)
             self.saldo_entry.insert(0, self._format_currency(value))
         except ValueError:
-            # keep the entered text if it's not parseable yet
             pass
 
     def _parse_currency_value(self, text: str) -> float:

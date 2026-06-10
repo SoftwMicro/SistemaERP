@@ -1,6 +1,9 @@
+import datetime
 import tkinter as tk
 from tkinter import ttk, messagebox
-
+from .caixa_abertura_view import CaixaAberturaView
+from .caixa_fechamento_view import CaixaFechamentoView
+from ..repository.caixa_repository import CaixaRepository
 
 
 
@@ -15,6 +18,7 @@ class TelaInicial:
             usuario: Objeto usuário autenticado
         """
         self.usuario = usuario
+        self.repository = CaixaRepository()
         self.root = tk.Tk()
         self.root.title(f"Sistema Financeiro - {usuario.nome}")
         self.root.geometry("1000x700")
@@ -25,6 +29,7 @@ class TelaInicial:
         self.root.grid_columnconfigure(0, weight=1)
         
         self._build_ui()
+        self._load_caixa_aberturas()
 
     def _build_ui(self) -> None:
         """Constrói a interface da tela inicial."""
@@ -80,7 +85,7 @@ class TelaInicial:
             "📦 OPERAÇÕES DE CAIXA",
             [
                 ("🔓 Abertura de Caixa", self._abrir_caixa),
-                ("🔒 Fechamento de Caixa", None),
+                ("🔒 Fechamento de Caixa", self._fechar_caixa),
             ]
         )
         
@@ -196,49 +201,133 @@ Módulos Disponíveis:
         caixa_frame.grid(row=1, column=0, sticky="ew", padx=20, pady=(0, 20))
         caixa_frame.grid_columnconfigure(0, weight=1)
 
-        columns = ("dataAbertura", "saldoInicial", "status")
-        self.caixa_tree = ttk.Treeview(caixa_frame, columns=columns, show="headings", height=1)
+        columns = ("id", "dataAbertura", "saldoInicial", "status")
+        self.caixa_tree = ttk.Treeview(caixa_frame, columns=columns, show="headings", height=5, selectmode="browse")
+        self.caixa_tree.heading("id", text="ID")
         self.caixa_tree.heading("dataAbertura", text="Data Abertura")
         self.caixa_tree.heading("saldoInicial", text="Saldo Inicial")
         self.caixa_tree.heading("status", text="Status")
-        self.caixa_tree.column("dataAbertura", width=220)
+        self.caixa_tree.column("id", width=80, anchor="center")
+        self.caixa_tree.column("dataAbertura", width=200)
         self.caixa_tree.column("saldoInicial", width=120, anchor="e")
         self.caixa_tree.column("status", width=120)
+        
+        scrollbar = ttk.Scrollbar(caixa_frame, orient="vertical", command=self.caixa_tree.yview)
+        self.caixa_tree.configure(yscroll=scrollbar.set)
+        
         self.caixa_tree.grid(row=0, column=0, sticky="ew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
 
         # placeholder quando não há caixa aberto
         self._set_caixa_placeholder()
 
     def _abrir_caixa(self) -> None:
-        from .caixa_abertura_view import CaixaAberturaView
-
         CaixaAberturaView(self)
+
+    def _fechar_caixa(self) -> None:
+        selected = self.caixa_tree.selection()
+        if not selected:
+            messagebox.showerror(
+                "Fechamento de Caixa",
+                "Selecione exatamente um registro para fechamento.",
+                parent=self.root,
+            )
+            return
+
+        if len(selected) > 1:
+            messagebox.showerror(
+                "Fechamento de Caixa",
+                "Selecione apenas um registro para fechamento.",
+                parent=self.root,
+            )
+            return
+
+        item_id = selected[0]
+        values = self.caixa_tree.item(item_id, "values")
+        caixa_id = values[0] if values else None
+
+        if caixa_id in (None, "—", ""):
+            messagebox.showerror(
+                "Fechamento de Caixa",
+                "Selecione um registro válido para fechamento.",
+                parent=self.root,
+            )
+            return
+
+        try:
+            caixa_id_int = int(caixa_id)
+        except (ValueError, TypeError):
+            messagebox.showerror(
+                "Fechamento de Caixa",
+                "O registro selecionado não possui um ID de caixa válido.",
+                parent=self.root,
+            )
+            return
+
+        CaixaFechamentoView(self, caixa_id_int)
+
+    def _load_caixa_aberturas(self) -> None:
+        """Carrega as últimas aberturas de caixa do usuário ao inicializar a tela."""
+        try:
+            aberturas = self.repository.obter_aberturas_fechamentos(self.usuario.id)
+            self.update_caixa_list(aberturas)
+        except Exception as error:
+            # Se houver erro ao carregar, apenas mostra placeholder
+            print(f"Aviso: Erro ao carregar aberturas de caixa: {error}")
+            self._set_caixa_placeholder()
+
+    def update_caixa_list(self, aberturas: list) -> None:
+        """Atualiza a grid de caixa com a lista de aberturas.
+
+        Args:
+            aberturas: Lista de dicionários com dados das aberturas
+        """
+        for i in self.caixa_tree.get_children():
+            self.caixa_tree.delete(i)
+
+        if not aberturas:
+            self._set_caixa_placeholder()
+            return
+
+        for abertura in aberturas:
+            caixa_id = abertura.get("id")
+            data_abertura = abertura.get("dataAbertura")
+            saldo_inicial = abertura.get("saldoInicial")
+            status = abertura.get("status")
+
+            # Formatar data/hora
+            data_abertura_text = self._format_datetime(data_abertura) if data_abertura else "—"
+
+            # Formatar saldo
+            try:
+                saldo_text = f"R$ {float(saldo_inicial):.2f}" if saldo_inicial is not None else "—"
+            except (ValueError, TypeError):
+                saldo_text = str(saldo_inicial)
+
+            self.caixa_tree.insert("", "end", values=(caixa_id or "—", data_abertura_text, saldo_text, status or "—"))
 
     def _set_caixa_placeholder(self) -> None:
         # Remove linhas existentes e mostra mensagem de vazio
         for i in self.caixa_tree.get_children():
             self.caixa_tree.delete(i)
-        self.caixa_tree.insert("", "end", values=("—", "—", "—"))
+        self.caixa_tree.insert("", "end", values=("—", "Nenhuma abertura de caixa", "—", "—"))
 
-    def update_caixa(self, caixa_data: dict) -> None:
-        """Atualiza a grid de caixa com os dados retornados pela API.
+    def _format_datetime(self, value: str) -> str:
+        if not value:
+            return "—"
 
-        Espera um dicionário contendo as chaves: `dataAbertura`, `saldoInicial`, `status`.
-        """
-        for i in self.caixa_tree.get_children():
-            self.caixa_tree.delete(i)
-
-        data_abertura = caixa_data.get("dataAbertura") or caixa_data.get("dataAbertura")
-        saldo_inicial = caixa_data.get("saldoInicial")
-        status = caixa_data.get("status")
-
-        # Formatar saldo
         try:
-            saldo_text = f"{float(saldo_inicial):.2f}" if saldo_inicial is not None else "—"
-        except Exception:
-            saldo_text = str(saldo_inicial)
+            dt = datetime.datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            try:
+                dt = datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%f")
+            except ValueError:
+                try:
+                    dt = datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%S")
+                except ValueError:
+                    return value
 
-        self.caixa_tree.insert("", "end", values=(data_abertura or "—", saldo_text, status or "—"))
+        return dt.strftime("%d-%m-%Y %H:%M")
 
     def _logout(self) -> None:
         """Callback para logout."""
