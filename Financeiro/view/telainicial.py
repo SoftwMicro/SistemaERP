@@ -201,15 +201,19 @@ Módulos Disponíveis:
         caixa_frame.grid(row=1, column=0, sticky="ew", padx=20, pady=(0, 20))
         caixa_frame.grid_columnconfigure(0, weight=1)
 
-        columns = ("id", "dataAbertura", "saldoInicial", "status")
+        columns = ("id", "dataAbertura", "saldoInicial", "dataFechamento", "saldoFinal", "status")
         self.caixa_tree = ttk.Treeview(caixa_frame, columns=columns, show="headings", height=5, selectmode="browse")
         self.caixa_tree.heading("id", text="ID")
         self.caixa_tree.heading("dataAbertura", text="Data Abertura")
         self.caixa_tree.heading("saldoInicial", text="Saldo Inicial")
+        self.caixa_tree.heading("dataFechamento", text="Data Fechamento")
+        self.caixa_tree.heading("saldoFinal", text="Saldo Final")
         self.caixa_tree.heading("status", text="Status")
         self.caixa_tree.column("id", width=80, anchor="center")
-        self.caixa_tree.column("dataAbertura", width=200)
+        self.caixa_tree.column("dataAbertura", width=160)
         self.caixa_tree.column("saldoInicial", width=120, anchor="e")
+        self.caixa_tree.column("dataFechamento", width=160)
+        self.caixa_tree.column("saldoFinal", width=120, anchor="e")
         self.caixa_tree.column("status", width=120)
         
         scrollbar = ttk.Scrollbar(caixa_frame, orient="vertical", command=self.caixa_tree.yview)
@@ -254,6 +258,15 @@ Módulos Disponíveis:
             )
             return
 
+        status_value = values[5] if len(values) > 5 else None
+        if not status_value or str(status_value).strip().upper() != "ABERTO":
+            messagebox.showerror(
+                "Fechamento de Caixa",
+                "Selecione apenas um registro com status ABERTO para fechamento.",
+                parent=self.root,
+            )
+            return
+
         try:
             caixa_id_int = int(caixa_id)
         except (ValueError, TypeError):
@@ -293,24 +306,43 @@ Módulos Disponíveis:
             caixa_id = abertura.get("id")
             data_abertura = abertura.get("dataAbertura")
             saldo_inicial = abertura.get("saldoInicial")
+            data_fechamento = abertura.get("dataFechamento")
+            saldo_final = abertura.get("saldoFinal")
             status = abertura.get("status")
 
             # Formatar data/hora
             data_abertura_text = self._format_datetime(data_abertura) if data_abertura else "—"
+            data_fechamento_text = self._format_datetime(data_fechamento) if data_fechamento else "—"
 
-            # Formatar saldo
+            # Formatar saldos
             try:
-                saldo_text = f"R$ {float(saldo_inicial):.2f}" if saldo_inicial is not None else "—"
+                saldo_inicial_text = self._format_currency(float(saldo_inicial)) if saldo_inicial is not None else "—"
             except (ValueError, TypeError):
-                saldo_text = str(saldo_inicial)
+                saldo_inicial_text = str(saldo_inicial) if saldo_inicial is not None else "—"
 
-            self.caixa_tree.insert("", "end", values=(caixa_id or "—", data_abertura_text, saldo_text, status or "—"))
+            try:
+                saldo_final_text = self._format_currency(float(saldo_final)) if saldo_final is not None else "—"
+            except (ValueError, TypeError):
+                saldo_final_text = str(saldo_final) if saldo_final is not None else "—"
+
+            self.caixa_tree.insert(
+                "",
+                "end",
+                values=(
+                    caixa_id or "—",
+                    data_abertura_text,
+                    saldo_inicial_text,
+                    data_fechamento_text,
+                    saldo_final_text,
+                    status or "—",
+                ),
+            )
 
     def _set_caixa_placeholder(self) -> None:
         # Remove linhas existentes e mostra mensagem de vazio
         for i in self.caixa_tree.get_children():
             self.caixa_tree.delete(i)
-        self.caixa_tree.insert("", "end", values=("—", "Nenhuma abertura de caixa", "—", "—"))
+        self.caixa_tree.insert("", "end", values=("—", "Nenhuma abertura de caixa", "—", "—", "—", "—"))
 
     def _format_datetime(self, value: str) -> str:
         if not value:
@@ -328,6 +360,16 @@ Módulos Disponíveis:
                     return value
 
         return dt.strftime("%d-%m-%Y %H:%M")
+
+    def _format_currency(self, value: float) -> str:
+        integer_part, _, decimal_part = f"{value:.2f}".partition(".")
+        integer_part_with_sep = "".join(
+            [
+                integer_part[max(i - 3, 0):i] + ("." if i != len(integer_part) else "")
+                for i in range(len(integer_part) % 3 or 3, len(integer_part) + 1, 3)
+            ]
+        )
+        return f"R$ {integer_part_with_sep},{decimal_part}"
 
     def _logout(self) -> None:
         """Callback para logout."""

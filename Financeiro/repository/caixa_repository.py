@@ -117,9 +117,34 @@ class CaixaRepository:
         try:
             with urllib.request.urlopen(request, timeout=10) as response:
                 body = response.read().decode("utf-8")
-                data = json.loads(body)
-                # Garante que sempre retorna uma lista
-                return data if isinstance(data, list) else []
+                raw = json.loads(body)
+                # Normaliza a resposta: garante lista e tipos para saldos/data de fechamento
+                if not isinstance(raw, list):
+                    return []
+
+                normalized = []
+                for item in raw:
+                    if not isinstance(item, dict):
+                        continue
+                    nd = dict(item)
+                    nd.setdefault("dataFechamento", None)
+
+                    for key in ("saldoInicial", "saldoFinal"):
+                        val = nd.get(key)
+                        if val is None:
+                            continue
+                        try:
+                            if isinstance(val, str):
+                                clean = val.replace(".", "").replace(",", ".")
+                            else:
+                                clean = val
+                            nd[key] = float(clean)
+                        except Exception:
+                            nd[key] = val
+
+                    normalized.append(nd)
+
+                return normalized
         except urllib.error.HTTPError as error:
             if error.code == 404:
                 # Retorna lista vazia se não encontrar
