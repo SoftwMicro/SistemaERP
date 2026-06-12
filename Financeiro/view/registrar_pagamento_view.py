@@ -12,8 +12,8 @@ class RegistrarPagamentoView:
         self.controller = PagamentoController()
         self.window = tk.Toplevel(parent)
         self.window.title("Registrar Pagamento")
-        self.window.geometry("900x650")
-        self.window.minsize(900, 650)
+        self.window.geometry("1000x800")
+        self.window.minsize(1000, 800)
         self.window.resizable(True, True)
         self.window.grid_rowconfigure(0, weight=1)
         self.window.grid_columnconfigure(0, weight=1)
@@ -36,9 +36,8 @@ class RegistrarPagamentoView:
         self.id_entry.grid(row=0, column=1, sticky="w", pady=4)
         self.id_entry.focus()
 
-        ttk.Button(search_frame, text="Pesquisar", command=self._on_search).grid(
-            row=0, column=2, padx=8, pady=4
-        )
+        self.search_button = ttk.Button(search_frame, text="Pesquisar", command=self._on_search)
+        self.search_button.grid(row=0, column=2, padx=8, pady=4)
 
         self.info_frame = ttk.LabelFrame(main_frame, text="Dados do Pedido", padding=10)
         self.info_frame.grid(row=1, column=0, sticky="ew", pady=(0, 10))
@@ -118,9 +117,48 @@ class RegistrarPagamentoView:
         self.history_tree.grid(row=0, column=0, sticky="nsew")
         history_scroll.grid(row=0, column=1, sticky="ns")
 
+        # Seção de Pagamento
+        payment_frame = ttk.LabelFrame(main_frame, text="Registro de Pagamento", padding=10)
+        payment_frame.grid(row=4, column=0, sticky="ew", pady=(0, 10))
+        payment_frame.grid_columnconfigure(1, weight=1)
+
+        ttk.Label(payment_frame, text="Forma de Pagamento:").grid(row=0, column=0, sticky="w", pady=4)
+        self.forma_pagamento = ttk.Combobox(
+            payment_frame,
+            values=["Dinheiro", "Cartão", "Pix"],
+            state="readonly",
+            width=22,
+        )
+        self.forma_pagamento.grid(row=0, column=1, sticky="w", pady=4)
+
+        ttk.Label(payment_frame, text="Valor Pago (R$):").grid(row=1, column=0, sticky="w", pady=4)
+        self.valor_pago_entry = ttk.Entry(payment_frame, width=24)
+        self.valor_pago_entry.grid(row=1, column=1, sticky="w", pady=4)
+
+        ttk.Label(payment_frame, text="Observações (opcional):").grid(row=2, column=0, sticky="nw", pady=4)
+        self.observacoes_text = tk.Text(payment_frame, height=3, width=40)
+        self.observacoes_text.grid(row=2, column=1, sticky="ew", pady=4)
+        payment_frame.grid_rowconfigure(2, weight=1)
+
+        # Mensagem de Feedback
+        self.feedback_label = ttk.Label(
+            main_frame,
+            text="",
+            wraplength=600,
+            justify="left",
+            foreground="black",
+        )
+        self.feedback_label.grid(row=5, column=0, sticky="ew", pady=(0, 10))
+
         button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=4, column=0, pady=12, sticky="e")
-        ttk.Button(button_frame, text="Fechar", command=self.window.destroy).grid(row=0, column=0, padx=6)
+        button_frame.grid(row=6, column=0, pady=12, sticky="e")
+        self.confirm_button = ttk.Button(button_frame, text="Confirmar Pagamento", command=self._on_confirm_payment)
+        self.confirm_button.grid(row=0, column=0, padx=6)
+        ttk.Button(button_frame, text="Fechar", command=self.window.destroy).grid(row=0, column=1, padx=6)
+
+        # Inicializar variáveis de controle
+        self.current_pedido_id = None
+        self.current_valor_total = 0.0
 
     def _on_search(self) -> None:
         pedido_id_text = self.id_entry.get().strip()
@@ -135,16 +173,41 @@ class RegistrarPagamentoView:
             return
 
         self._clear_order_display()
+        self._set_action_buttons_state("disabled")
+        self._show_feedback("Aguarde... pesquisando pedido.", color="black")
 
         try:
             pedido = self.controller.obter_pedido_por_id(pedido_id)
             self._fill_order_data(pedido)
         except ValueError as error:
-            messagebox.showerror("Erro", str(error), parent=self.window)
+            self._show_feedback(str(error), color="red")
         except Exception as error:
-            messagebox.showerror("Erro", f"Falha ao consultar a API: {error}", parent=self.window)
+            self._show_feedback(f"Falha ao consultar a API: {error}", color="red")
+        finally:
+            self._set_action_buttons_state("normal")
 
     def _fill_order_data(self, pedido: dict) -> None:
+        # Armazenar IDs e valores para uso posterior
+        # A API retorna "numero" como identificador do pedido
+        self.current_pedido_id = pedido.get("numero")
+        
+        # Converter para inteiro se encontrado
+        if self.current_pedido_id:
+            try:
+                self.current_pedido_id = int(self.current_pedido_id)
+            except (ValueError, TypeError):
+                self.current_pedido_id = None
+        
+        self.current_valor_total = float(str(pedido.get("valor_total", 0)).replace("R$", "").replace(" ", "").replace(".", "").replace(",", "."))
+        
+        # Limpar feedback anterior
+        self._clear_feedback()
+        
+        # Limpar campos de pagamento
+        self.forma_pagamento.set("")
+        self.valor_pago_entry.delete(0, tk.END)
+        self.observacoes_text.delete("1.0", tk.END)
+
         self.info_labels["numero"].configure(text=str(pedido.get("numero", "—")))
         self.info_labels["data_criacao"].configure(text=self._format_datetime(pedido.get("data_criacao")))
         self.info_labels["cliente"].configure(text=str(pedido.get("cliente", "—")))
@@ -218,3 +281,89 @@ class RegistrarPagamentoView:
             ]
         )
         return f"R$ {integer_part_with_sep},{decimal_part}"
+
+    def _on_confirm_payment(self) -> None:
+        """Confirma o pagamento do pedido."""
+        if not self.current_pedido_id:
+            self._show_feedback("Erro: Pesquise um pedido antes de confirmar o pagamento.", color="red")
+            return
+
+        forma_pagamento = self.forma_pagamento.get().strip()
+        if not forma_pagamento:
+            self._show_feedback("Erro: Selecione uma forma de pagamento.", color="red")
+            return
+
+        valor_pago_text = self.valor_pago_entry.get().strip()
+        if not valor_pago_text:
+            self._show_feedback("Erro: Informe o valor pago.", color="red")
+            return
+
+        try:
+            valor_pago = float(valor_pago_text.replace("R$", "").replace(" ", "").replace(".", "").replace(",", "."))
+        except ValueError:
+            self._show_feedback("Erro: Valor pago deve ser um número válido.", color="red")
+            return
+
+        if valor_pago <= 0:
+            self._show_feedback("Erro: O valor pago deve ser maior que zero.", color="red")
+            return
+
+        if valor_pago > self.current_valor_total:
+            self._show_feedback(
+                f"Erro: O valor pago (R$ {self._format_currency_value(valor_pago)}) não pode exceder o valor total (R$ {self._format_currency_value(self.current_valor_total)}).",
+                color="red",
+            )
+            return
+
+        observacoes = self.observacoes_text.get("1.0", tk.END).strip()
+
+        try:
+            resultado = self.controller.registrar_pagamento(
+                pedido_id=self.current_pedido_id,
+                forma_pagamento=forma_pagamento,
+                valor_pago=valor_pago,
+                observacoes=observacoes or None,
+            )
+
+            self._show_feedback(
+                f"Sucesso! Pagamento registrado com sucesso. ID: {resultado.get('id', 'N/A')}",
+                color="green",
+            )
+
+            # Limpar campos após sucesso
+            self.forma_pagamento.set("")
+            self.valor_pago_entry.delete(0, tk.END)
+            self.observacoes_text.delete("1.0", tk.END)
+
+        except ValueError as error:
+            self._show_feedback(f"Erro na validação: {str(error)}", color="red")
+        except ConnectionError as error:
+            self._show_feedback(f"Erro de conexão: {str(error)}", color="red")
+        except Exception as error:
+            self._show_feedback(f"Erro ao registrar pagamento: {str(error)}", color="red")
+        finally:
+            self._set_action_buttons_state("normal")
+
+    def _set_action_buttons_state(self, state: str) -> None:
+        """Habilita ou desabilita botões de ação para evitar cliques duplos."""
+        self.search_button.configure(state=state)
+        self.confirm_button.configure(state=state)
+
+    def _show_feedback(self, message: str, color: str = "black") -> None:
+        """Exibe mensagem de feedback ao usuário."""
+        self.feedback_label.configure(text=message, foreground=color)
+
+    def _clear_feedback(self) -> None:
+        """Limpa a mensagem de feedback."""
+        self.feedback_label.configure(text="", foreground="black")
+
+    def _format_currency_value(self, value: float) -> str:
+        """Formata um valor numérico como moeda brasileira simples."""
+        integer_part, _, decimal_part = f"{value:.2f}".partition(".")
+        integer_part_with_sep = "".join(
+            [
+                integer_part[max(i - 3, 0):i] + ("." if i != len(integer_part) else "")
+                for i in range(len(integer_part) % 3 or 3, len(integer_part) + 1, 3)
+            ]
+        )
+        return f"{integer_part_with_sep},{decimal_part}"
