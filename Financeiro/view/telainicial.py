@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from .caixa_abertura_view import CaixaAberturaView
 from .caixa_fechamento_view import CaixaFechamentoView
+from .registrar_pagamento_view import RegistrarPagamentoView
 from ..repository.caixa_repository import CaixaRepository
 
 
@@ -93,7 +94,7 @@ class TelaInicial:
             scrollable_frame,
             "💳 PAGAMENTOS",
             [
-                ("💰 Registrar Pagamento", None),
+                ("💰 Registrar Pagamento", self._abrir_registrar_pagamento),
             ]
         )
         
@@ -227,6 +228,9 @@ Módulos Disponíveis:
 
     def _abrir_caixa(self) -> None:
         CaixaAberturaView(self)
+
+    def _abrir_registrar_pagamento(self) -> None:
+        RegistrarPagamentoView(self)
 
     def _fechar_caixa(self) -> None:
         selected = self.caixa_tree.selection()
