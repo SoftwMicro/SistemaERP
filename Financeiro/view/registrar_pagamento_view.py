@@ -24,11 +24,11 @@ class RegistrarPagamentoView:
         main_frame = ttk.Frame(self.window, padding=12)
         main_frame.grid(row=0, column=0, sticky="nsew")
         main_frame.grid_columnconfigure(0, weight=1)
+        main_frame.grid_columnconfigure(1, weight=1)
         main_frame.grid_rowconfigure(2, weight=1)
-        main_frame.grid_rowconfigure(3, weight=1)
 
         search_frame = ttk.LabelFrame(main_frame, text="Pesquisa de Pedido", padding=10)
-        search_frame.grid(row=0, column=0, sticky="ew", pady=(0, 10))
+        search_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
         search_frame.grid_columnconfigure(1, weight=1)
 
         ttk.Label(search_frame, text="ID do Pedido:").grid(row=0, column=0, sticky="w", pady=4)
@@ -60,7 +60,7 @@ class RegistrarPagamentoView:
             self.info_labels[key] = label
 
         items_frame = ttk.LabelFrame(main_frame, text="Itens do Pedido", padding=10)
-        items_frame.grid(row=2, column=0, sticky="nsew", pady=(0, 10))
+        items_frame.grid(row=2, column=0, columnspan=2, sticky="nsew", pady=(0, 10))
         items_frame.grid_rowconfigure(0, weight=1)
         items_frame.grid_columnconfigure(0, weight=1)
 
@@ -87,39 +87,9 @@ class RegistrarPagamentoView:
         self.items_tree.grid(row=0, column=0, sticky="nsew")
         item_scroll.grid(row=0, column=1, sticky="ns")
 
-        history_frame = ttk.LabelFrame(main_frame, text="Histórico de Status", padding=10)
-        history_frame.grid(row=3, column=0, sticky="nsew", pady=(0, 10))
-        history_frame.grid_rowconfigure(0, weight=1)
-        history_frame.grid_columnconfigure(0, weight=1)
-
-        history_cols = ("data_hora", "status_anterior", "novo_status", "usuario", "observacoes")
-        self.history_tree = ttk.Treeview(
-            history_frame,
-            columns=history_cols,
-            show="headings",
-            height=6,
-            selectmode="none",
-        )
-        self.history_tree.heading("data_hora", text="Data/Hora")
-        self.history_tree.heading("status_anterior", text="Status Anterior")
-        self.history_tree.heading("novo_status", text="Novo Status")
-        self.history_tree.heading("usuario", text="Usuário")
-        self.history_tree.heading("observacoes", text="Observações")
-
-        self.history_tree.column("data_hora", width=160)
-        self.history_tree.column("status_anterior", width=140)
-        self.history_tree.column("novo_status", width=140)
-        self.history_tree.column("usuario", width=120)
-        self.history_tree.column("observacoes", width=260)
-
-        history_scroll = ttk.Scrollbar(history_frame, orient="vertical", command=self.history_tree.yview)
-        self.history_tree.configure(yscroll=history_scroll.set)
-        self.history_tree.grid(row=0, column=0, sticky="nsew")
-        history_scroll.grid(row=0, column=1, sticky="ns")
-
         # Seção de Pagamento
         payment_frame = ttk.LabelFrame(main_frame, text="Registro de Pagamento", padding=10)
-        payment_frame.grid(row=4, column=0, sticky="ew", pady=(0, 10))
+        payment_frame.grid(row=1, column=1, sticky="nsew", padx=(10, 0), pady=(0, 10))
         payment_frame.grid_columnconfigure(1, weight=1)
 
         ttk.Label(payment_frame, text="Forma de Pagamento:").grid(row=0, column=0, sticky="w", pady=4)
@@ -134,6 +104,8 @@ class RegistrarPagamentoView:
         ttk.Label(payment_frame, text="Valor Pago (R$):").grid(row=1, column=0, sticky="w", pady=4)
         self.valor_pago_entry = ttk.Entry(payment_frame, width=24)
         self.valor_pago_entry.grid(row=1, column=1, sticky="w", pady=4)
+        # Formatar valor como moeda brasileira ao pressionar Enter
+        self.valor_pago_entry.bind("<Return>", self._on_valor_pago_enter)
 
         ttk.Label(payment_frame, text="Observações (opcional):").grid(row=2, column=0, sticky="nw", pady=4)
         self.observacoes_text = tk.Text(payment_frame, height=3, width=40)
@@ -144,14 +116,14 @@ class RegistrarPagamentoView:
         self.feedback_label = ttk.Label(
             main_frame,
             text="",
-            wraplength=600,
+            wraplength=900,
             justify="left",
             foreground="black",
         )
-        self.feedback_label.grid(row=5, column=0, sticky="ew", pady=(0, 10))
+        self.feedback_label.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(0, 10))
 
         button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=6, column=0, pady=12, sticky="e")
+        button_frame.grid(row=4, column=0, columnspan=2, pady=12, sticky="e")
         self.confirm_button = ttk.Button(button_frame, text="Confirmar Pagamento", command=self._on_confirm_payment)
         self.confirm_button.grid(row=0, column=0, padx=6)
         ttk.Button(button_frame, text="Fechar", command=self.window.destroy).grid(row=0, column=1, padx=6)
@@ -223,26 +195,12 @@ class RegistrarPagamentoView:
             subtotal = self._format_currency(item.get("subtotal"))
             self.items_tree.insert("", "end", values=(produto, quantidade, preco_unitario, subtotal))
 
-        historico = pedido.get("historico_status") or []
-        for registro in historico:
-            data_hora = self._format_datetime(registro.get("data_hora"))
-            status_anterior = registro.get("status_anterior", "—")
-            novo_status = registro.get("novo_status", "—")
-            usuario = registro.get("usuario", "—")
-            observacoes = registro.get("observacoes", "—")
-            self.history_tree.insert(
-                "",
-                "end",
-                values=(data_hora, status_anterior, novo_status, usuario, observacoes),
-            )
 
     def _clear_order_display(self) -> None:
         for label in self.info_labels.values():
             label.configure(text="—")
         for item in self.items_tree.get_children():
             self.items_tree.delete(item)
-        for item in self.history_tree.get_children():
-            self.history_tree.delete(item)
 
     def _format_datetime(self, value) -> str:
         if not value:
@@ -343,6 +301,23 @@ class RegistrarPagamentoView:
             self._show_feedback(f"Erro ao registrar pagamento: {str(error)}", color="red")
         finally:
             self._set_action_buttons_state("normal")
+
+    def _on_valor_pago_enter(self, event=None) -> str:
+        """Formata o conteúdo de `valor_pago_entry` para moeda BRL quando o usuário pressiona Enter."""
+        text = self.valor_pago_entry.get().strip()
+        if not text:
+            return "break"
+
+        try:
+            amount = float(str(text).replace("R$", "").replace("r$", "").replace(" ", "").replace(".", "").replace(",", "."))
+        except (ValueError, TypeError):
+            self._show_feedback("Erro: valor informado inválido.", color="red")
+            return "break"
+
+        formatted = f"R$ {self._format_currency_value(amount)}"
+        self.valor_pago_entry.delete(0, tk.END)
+        self.valor_pago_entry.insert(0, formatted)
+        return "break"
 
     def _set_action_buttons_state(self, state: str) -> None:
         """Habilita ou desabilita botões de ação para evitar cliques duplos."""
