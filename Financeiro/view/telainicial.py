@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from .caixa_abertura_view import CaixaAberturaView
 from .caixa_fechamento_view import CaixaFechamentoView
+from .comprovante_view import EmitirComprovanteView
 from .registrar_pagamento_view import RegistrarPagamentoView
 from ..repository.caixa_repository import CaixaRepository
 
@@ -102,7 +103,7 @@ class TelaInicial:
             scrollable_frame,
             "📄 COMPROVANTES",
             [
-                ("🖨️ Emitir Comprovante", None),
+                ("🖨️ Emitir Comprovante", self._abrir_emitir_comprovante),
             ]
         )
         
@@ -231,6 +232,9 @@ Módulos Disponíveis:
 
     def _abrir_registrar_pagamento(self) -> None:
         RegistrarPagamentoView(self)
+
+    def _abrir_emitir_comprovante(self) -> None:
+        EmitirComprovanteView(self)
 
     def _fechar_caixa(self) -> None:
         selected = self.caixa_tree.selection()
