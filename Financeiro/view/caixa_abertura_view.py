@@ -43,7 +43,7 @@ class CaixaAberturaView:
             return
 
         try:
-            saldo = float(saldo_text.replace(",", "."))
+            saldo = self._parse_currency_value(saldo_text)
         except ValueError:
             messagebox.showerror("Erro", "Saldo inicial deve ser um número válido.", parent=self.window)
             return
