@@ -4,6 +4,7 @@ from tkinter import ttk, messagebox
 from .cliente_view import ClienteView
 from .produto_view import ProdutoView
 from .pedido_view import PedidoView
+from views.vendas.vendas_view import VendasView
 
 class MainView:
     def __init__(self):
@@ -37,7 +38,6 @@ class MainView:
         self.cliente_view = ClienteView(self.cliente_tab)
         self.produto_view = ProdutoView(self.produto_tab)
         self.pedido_view = PedidoView(self.pedido_tab)
-        from views.vendas.vendas_view import VendasView
         self.vendas_view = VendasView(self.vendas_tab)
 
     def run(self):
