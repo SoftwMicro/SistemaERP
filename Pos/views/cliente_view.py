@@ -27,4 +27,4 @@ class ClienteView:
         for i in self.tree.get_children():
             self.tree.delete(i)
         for c in clientes:
-            self.tree.insert('', 'end', values=(c['id'], c['nome'], c['cpf_cnpj'], c['email'], c['telefone'], c['ativo']))
+           self.tree.insert('', 'end', values=(c['id'], c['nome'], c['cpf_cnpj'], c['email'], c['telefone'], c['ativo']))
