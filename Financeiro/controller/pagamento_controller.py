@@ -1,6 +1,11 @@
+import logging
+
 import requests
 
+from ..auth_context import get_current_user
 from ..repository.pagamento_repository import PagamentoRepository
+
+logger = logging.getLogger(__name__)
 
 
 class PagamentoController:
@@ -41,7 +46,7 @@ class PagamentoController:
         observacoes: str | None = None,
     ) -> dict:
         """
-        Registra um novo pagamento.
+        Registra um novo pagamento e atualiza o status do pedido.
 
         Args:
             pedido_id: ID do pedido
@@ -56,13 +61,63 @@ class PagamentoController:
             ValueError: se houver erro na validação ou registro
             ConnectionError: se não conseguir conectar à API
         """
-        return self.pagamento_repository.registrar_pagamento(
+        pagamento_response = self.pagamento_repository.registrar_pagamento(
             pedido_id=pedido_id,
             forma_pagamento=forma_pagamento,
             valor_pago=valor_pago,
             status_pagamento="Confirmado",
             observacoes=observacoes,
         )
+
+        usuario = get_current_user()
+        usuario_identificacao = (
+            str(usuario.login)
+            if usuario and getattr(usuario, "login", None)
+            else str(usuario.id) if usuario and getattr(usuario, "id", None) is not None else "sistema"
+        )
+
+        observacoes_status = "Pagamento realizado"
+        if pagamento_response and isinstance(pagamento_response, dict):
+            codigo_evento = (
+                pagamento_response.get("codigo")
+                or pagamento_response.get("transactionCode")
+                or pagamento_response.get("id")
+                or pagamento_response.get("orderId")
+            )
+            if codigo_evento is not None:
+                observacoes_status = f"Pagamento realizado. Código da transação: {codigo_evento}"
+
+        status_url = f"{self.BASE_URL}/{pedido_id}/status"
+        payload = {
+            "status": "CONFIRMADO",
+            "usuario": usuario_identificacao,
+            "observacoes": observacoes_status,
+        }
+
+        try:
+            response = requests.patch(status_url, json=payload, timeout=10)
+            if response.status_code not in (200, 201):
+                logger.error(
+                    "Falha ao atualizar status do pedido %s: %s %s",
+                    pedido_id,
+                    response.status_code,
+                    response.text,
+                )
+                raise ValueError(
+                    f"Falha ao atualizar status do pedido: {response.status_code} {response.text}"
+                )
+        except requests.RequestException as exc:
+            logger.error(
+                "Erro de conexão ao atualizar status do pedido %s: %s",
+                pedido_id,
+                exc,
+                exc_info=True,
+            )
+            raise ConnectionError(
+                f"Não foi possível atualizar o status do pedido: {exc}"
+            ) from exc
+
+        return pagamento_response
 
     def validar_valor_pagamento(self, pedido_id: int, valor_pago: float) -> bool:
         """
