@@ -94,6 +94,7 @@ class OrderService:
         # Validação de transições
         status_atual = pedido.status
         transicoes_validas = {
+            'ABERTO': ['CONFIRMADO', 'CANCELADO'],
             'PENDENTE': ['CONFIRMADO', 'CANCELADO'],
             'CONFIRMADO': ['SEPARADO', 'CANCELADO'],
             'SEPARADO': ['ENVIADO'],
